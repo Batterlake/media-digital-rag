@@ -28,6 +28,9 @@ python-json-logger = "^2.0.7"
 colorlog = "^6.8.2"
 aiohttp = "^3.10.10"
 openai = "^1.54.3"
+byaldi = "^0.0.5"
+qwen-vl-utils = "^0.0.8"
+transformers = "^4.46.2"
 
 [tool.poetry.group.docs]
 optional = true
