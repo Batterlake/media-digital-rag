@@ -1,0 +1,30 @@
+ci:
+  autofix_commit_msg: "\U0001F3A8 [pre-commit.ci] Auto format from pre-commit.com\
+    \ hooks"
+  autoupdate_commit_msg: "\u2B06 [pre-commit.ci] pre-commit autoupdate"
+repos:
+# - hooks:
+#   - args:
+#     - --pin-patterns
+#     - '[pin];[donotremove]'
+#     id: jupyter-notebook-cleanup
+#   repo: https://github.com/roy-ht/pre-commit-jupyter
+#   rev: v1.2.1
+- hooks:
+  - id: check-added-large-files
+  - id: check-toml
+  - args:
+    - --unsafe
+    id: check-yaml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+  repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+- hooks:
+  - args:
+    - --fix
+    - --exit-non-zero-on-fix
+    id: ruff
+  - id: ruff-format
+  repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.1.2
