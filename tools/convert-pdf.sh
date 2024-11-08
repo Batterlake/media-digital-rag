@@ -2,7 +2,7 @@
 
 SOURCE_FILE=$1
 TARGET_FOLDER=$2
-base_name=$(basename "$SOURCE_FILE" .pdf)
+base_name=$(basename "$SOURCE_FILE")
 target_folder=$TARGET_FOLDER/$base_name/
 echo $target_folder $base_name $SOURCE_FILE
 mkdir -p $target_folder
