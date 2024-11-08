@@ -1,4 +1,5 @@
 .ONESHELL:
+.PHONY: download-dataset
 
 download-dataset:
 	mkdir -p ./data
@@ -6,3 +7,9 @@ download-dataset:
 	cd ./data
 	unzip train_dataset_mediawise_train.zip
 	rm -r ./__MACOSX
+
+convert-pdfs:
+	find data/train_data_mediawise/Media_Digital -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./data/pdfs/
+
+deploy:
+	docker compose up -d
