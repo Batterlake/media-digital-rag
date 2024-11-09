@@ -12,7 +12,6 @@ from fastapi.responses import (
     HTMLResponse,
     StreamingResponse,
 )
-from fpdf import FPDF
 
 from ..db import index_uploaded_files
 from .conversion import convert_cyrillic_to_pdf
@@ -153,30 +152,6 @@ async def process_upload(files: List[Path]):
     except Exception as e:
         async for chunk in send_progress({"error": f"Upload failed: {str(e)}"}):
             yield chunk
-
-
-def convert_text_to_pdf(filename: str | Path):
-    filename = Path(filename)
-    # Create a PDF class instance
-    pdf = FPDF()
-    # Add a page
-    pdf.add_page()
-    # Set font
-    pdf.add_font("DejaVu", "", "assets/NotoSans-VariableFont_wdth,wght.ttf", uni=True)
-    # pdf.set_font("assets/DejaVuSans.ttf", size=12)
-    pdf.set_font("DejaVu", "", 10)
-    # pdf.cell(200, 10, txt="Заявка №_01-000001", ln=1, align="C")
-    # Open the text file and read its contents
-    with open(filename) as file:
-        for line in file:
-            # Add each line of the text file to the PDF
-            pdf.cell(200, 10, txt=line, ln=True)
-
-    # Save the PDF with name 'output.pdf'
-    new_name = filename.with_suffix(".pdf")
-    pdf.output(new_name)
-    filename.unlink()
-    return new_name
 
 
 @router.post("/upload")
