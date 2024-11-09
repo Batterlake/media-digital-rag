@@ -19,7 +19,8 @@ services:
     image: qwenllm/qwenvl:2-cu121
     restart: always
     shm_size: '50gb'
-    entrypoint: "python -m vllm.entrypoints.openai.api_server --served-model-name Qwen2-VL-72B-Instruct-GPTQ-Int4 --model Qwen/Qwen2-VL-72B-Instruct-GPTQ-Int4 --gpu-memory-utilization 1.0 --max_model_len 14336  --limit-mm-per-prompt image=10"
+    # entrypoint: "python -m vllm.entrypoints.openai.api_server --served-model-name Qwen2-VL-72B-Instruct-GPTQ-Int4 --model Qwen/Qwen2-VL-72B-Instruct-GPTQ-Int4 --gpu-memory-utilization 1.0 --max_model_len 14336  --limit-mm-per-prompt image=10"
+    entrypoint: "python -m vllm.entrypoints.openai.api_server --served-model-name Qwen2-VL-7B-Instruct-GPTQ-Int4 --model Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4 --gpu-memory-utilization .2 --max_model_len 14336  --limit-mm-per-prompt image=10 --enforce-eager"
     ports:
       - 6336:8000
     expose:
@@ -34,6 +35,7 @@ services:
             - driver: nvidia
               device_ids: ['3']
               capabilities: [gpu]
+
 
 configs:
   qdrant_config:

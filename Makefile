@@ -19,7 +19,8 @@ download-dataset:
 	rm -r ./__MACOSX
 
 convert-pdfs:
-	find data/train_data_mediawise/Media_Digital -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./data/pdfs/
+	cp -r data/train_data_mediawise/Media_Digital data/pdfs
+	find data/pdfs -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./data/jpeg/
 
 deploy:
 	docker compose up -d
