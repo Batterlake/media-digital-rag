@@ -4,6 +4,12 @@
 
 {% block content %}
 <div class="container">
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="progress-text"></div>
+    </div>
     <div class="header">
         <form class="search-container" method="get" action="/files">
             <div class="search-wrapper">
@@ -20,12 +26,18 @@
         <div class="upload-container">
             <input type="file" id="file-upload" class="file-input" multiple>
             <label for="file-upload" class="upload-button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                Upload Files
+                <div class="upload-content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span class="upload-text">Upload Files</span>
+                </div>
+                <div class="upload-loading">
+                    <div class="upload-spinner"></div>
+                    <span>Processing...</span>
+                </div>
             </label>
         </div>
     </div>
@@ -113,6 +125,17 @@
         const files = e.target.files;
         if (!files.length) return;
 
+        const uploadButton = document.querySelector('.upload-button');
+        const progressContainer = document.querySelector('.progress-container');
+        const progressBar = document.querySelector('.progress-fill');
+        const progressText = document.querySelector('.progress-text');
+
+        // Reset state
+        uploadButton.classList.add('loading');
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressText.textContent = 'Starting upload...';
+
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
@@ -124,17 +147,144 @@
                 body: formData
             });
 
-            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            if (response.ok) {
-                // Refresh the page to show new files
-                window.location.reload();
-            } else {
-                alert(result.error || 'Failed to upload files');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { value, done } = await reader.read();
+
+                if (done) break;
+
+                const text = decoder.decode(value);
+                const lines = text.split('\n');
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+
+                    try {
+                        const data = JSON.parse(line);
+                        console.log('Progress update:', data);
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
+                        // Update progress bar and text immediately
+                        requestAnimationFrame(() => {
+                            progressBar.style.width = `${data.progress}%`;
+                            progressText.textContent = data.message;
+                        });
+
+                        // if (data.stage === 'complete') {
+                        //     // Wait a moment to show completion before reloading
+                        //     await new Promise(resolve => setTimeout(resolve, 10000));
+                        //     window.location.reload();
+                        //     return;
+                        // }
+                    } catch (parseError) {
+                        console.error('Error parsing stream data:', parseError);
+                    }
+                }
             }
         } catch (error) {
-            alert('Error uploading files: ' + error.message);
+            console.error('Upload error:', error);
+            progressText.textContent = `Error: ${error.message}`;
+            progressBar.style.backgroundColor = '#dc3545';
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        } finally {
+            uploadButton.classList.remove('loading');
+            progressContainer.style.display = 'none';
+            e.target.value = ''; // Reset file input
         }
     });
 </script>
+
+<style>
+    .progress-container {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 300px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+
+    .progress-bar {
+        height: 6px;
+        background: #eee;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #007bff;
+        width: 0;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        margin-top: 8px;
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+    }
+
+    .upload-button {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .upload-content,
+    .upload-loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: opacity 0.3s ease;
+    }
+
+    .upload-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: inherit;
+        opacity: 0;
+        pointer-events: none;
+        justify-content: center;
+    }
+
+    .upload-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+    }
+
+    .upload-button.loading .upload-content {
+        opacity: 0;
+    }
+
+    .upload-button.loading .upload-loading {
+        opacity: 1;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 {% endblock %}
