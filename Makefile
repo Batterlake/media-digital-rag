@@ -23,7 +23,7 @@ convert-pdfs:
 	find uploads/ -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./previews/
 
 populate-database:
-	docker compose exec web bash -c 'poetry install && poetry run python app/populate.py'
+	docker compose exec web bash -c 'poetry install && poetry run python tools/populate.py'
 
 deploy:
 	docker compose up -d
