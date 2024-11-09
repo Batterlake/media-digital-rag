@@ -15,6 +15,7 @@ from fastapi.responses import (
 from fpdf import FPDF
 
 from ..db import index_uploaded_files
+from .conversion import convert_cyrillic_to_pdf
 
 router = APIRouter()
 
@@ -161,7 +162,7 @@ def convert_text_to_pdf(filename: str | Path):
     # Add a page
     pdf.add_page()
     # Set font
-    pdf.add_font("DejaVu", "", "assets/DejaVuSans.ttf", uni=True)
+    pdf.add_font("DejaVu", "", "assets/NotoSans-VariableFont_wdth,wght.ttf", uni=True)
     # pdf.set_font("assets/DejaVuSans.ttf", size=12)
     pdf.set_font("DejaVu", "", 10)
     # pdf.cell(200, 10, txt="Заявка №_01-000001", ln=1, align="C")
@@ -199,7 +200,11 @@ async def upload_files(files: List[UploadFile] = File(...)):
             f.write(content)
 
         if file.content_type in ["text/plain", "text/markdown"]:
-            file_path = convert_text_to_pdf(file_path)
+            file_path = convert_cyrillic_to_pdf(
+                input_file=file_path,
+                output_pdf=file_path.with_suffix(".pdf"),
+                font_path="./assets/NotoSans-VariableFont_wdth,wght.ttf",
+            )
 
         saved_files.append(file_path)
 
