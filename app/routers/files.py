@@ -12,6 +12,7 @@ from fastapi.responses import (
     HTMLResponse,
     StreamingResponse,
 )
+from fpdf import FPDF
 
 from ..db import index_uploaded_files
 
@@ -153,6 +154,30 @@ async def process_upload(files: List[Path]):
             yield chunk
 
 
+def convert_text_to_pdf(filename: str | Path):
+    filename = Path(filename)
+    # Create a PDF class instance
+    pdf = FPDF()
+    # Add a page
+    pdf.add_page()
+    # Set font
+    pdf.add_font("DejaVu", "", "assets/DejaVuSans.ttf", uni=True)
+    # pdf.set_font("assets/DejaVuSans.ttf", size=12)
+    pdf.set_font("DejaVu", "", 10)
+    # pdf.cell(200, 10, txt="Заявка №_01-000001", ln=1, align="C")
+    # Open the text file and read its contents
+    with open(filename) as file:
+        for line in file:
+            # Add each line of the text file to the PDF
+            pdf.cell(200, 10, txt=line, ln=True)
+
+    # Save the PDF with name 'output.pdf'
+    new_name = filename.with_suffix(".pdf")
+    pdf.output(new_name)
+    filename.unlink()
+    return new_name
+
+
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
     uploads_dir = Path("uploads")
@@ -163,11 +188,19 @@ async def upload_files(files: List[UploadFile] = File(...)):
     for file in files:
         if not file.filename:
             return "Failed"
-
+        if file.content_type not in ["text/plain", "text/markdown", "application/pdf"]:
+            raise HTTPException(
+                "422",
+                detail=f"Uploaded file in unsupported format: {file.content_type}",
+            )
         file_path = uploads_dir / file.filename
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
+
+        if file.content_type in ["text/plain", "text/markdown"]:
+            file_path = convert_text_to_pdf(file_path)
+
         saved_files.append(file_path)
 
     return StreamingResponse(

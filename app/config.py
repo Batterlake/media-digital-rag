@@ -1,4 +1,4 @@
-QDRANT_COLLECTION_NAME = "main-collection"
+QDRANT_COLLECTION_NAME = "main-collection-test"
 QDRANT_URL = "http://qdrant:6333"
 QDRANT_KEY = ""
 LLM_URL = "http://vllm:8000/v1"
