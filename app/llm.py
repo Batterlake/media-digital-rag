@@ -14,6 +14,7 @@ If none of the images answer the question, just say you don't know.
 
 ### Answer format ###
 On image @{image_number}@ was mentioned ...
+Also on image @{image_number}@ was mentioned ...
 """
 
 

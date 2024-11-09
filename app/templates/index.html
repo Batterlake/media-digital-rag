@@ -172,7 +172,7 @@
             modalPreview.src = currentImages[currentImageIndex];
             const link = currentLinks[currentImageIndex];
             if (link) {
-                modalCaption.href = `/pdf/${link[0]}#page=${link[1]}`;
+                modalCaption.href = `/pdf/${link[0]}.pdf#page=${link[1]}`;
                 modalCaption.textContent = `Файл ${link[0]}, страница ${link[1]}`;
                 // modalCaption.parentElement.style.display = 'block';
             } else {

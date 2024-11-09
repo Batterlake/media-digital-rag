@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from ..db import colpali_client, vector_search
@@ -55,7 +56,7 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
         matches = vector_search(multivector_query, top_k)
         matches = unique_dicts(matches, "file_id", "page_id")
         links_to_matches = [
-            f"[{m['file_id'].split('/')[-1]}.pdf](/pdf/{m['file_id'].split('/')[-1]}.pdf#page={m['page_id']})"
+            f"[{m['file_id'].split('/')[-1]}.pdf](/pdf/{m['file_id'].split('/')[-1]}.pdf#page={int(m['page_id']) + 1})"
             for m in matches
         ]
         yield (
@@ -64,7 +65,8 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
                     "text": f"Found top {top_k} pages...",
                     "images": [f"{m['file_id']}/{m['page_id']}.jpg" for m in matches],
                     "links": [
-                        [m["file_id"].split("/")[-1], m["page_id"]] for m in matches
+                        [m["file_id"].split("/")[-1], int(m["page_id"]) + 1]
+                        for m in matches
                     ],
                 }
             )
@@ -72,17 +74,16 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
+        llm_response = await run_in_threadpool(
+            request_with_images,
+            query,
+            [Path(f"{match['file_id']}/{match['page_id']}.jpg") for match in matches],
+        )
         yield (
             json.dumps(
                 {
                     "text": substitute_objects(
-                        request_with_images(
-                            query,
-                            [
-                                Path(f"{match['file_id']}/{match['page_id']}.jpg")
-                                for match in matches
-                            ],
-                        ),
+                        llm_response,
                         links_to_matches,
                     ),
                     "images": [],
@@ -143,7 +144,7 @@ async def search_with_image(
         matches = unique_dicts(sorted_matches, "file_id", "page_id")
         matches = sorted_matches[:top_k]
         links_to_matches = [
-            f"[{m['file_id']}.pdf](/pdf/{m['file_id']}.pdf#page={m['page_id']})"
+            f"[{m['file_id']}.pdf](/pdf/{m['file_id']}.pdf#page={int(m['page_id']) + 1})"
             for m in matches
         ]
         yield (
@@ -154,24 +155,22 @@ async def search_with_image(
                         f"{m['file_id']}/{m['page_id']}.jpg" for m in matches_image
                     ]
                     + [f"{m['file_id']}/{m['page_id']}.jpg" for m in matches_query],
-                    "links": [[m["file_id"], m["page_id"]] for m in matches],
+                    "links": [[m["file_id"], int(m["page_id"]) + 1] for m in matches],
                 }
             )
             + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
-
+        llm_response = await run_in_threadpool(
+            request_with_images,
+            query,
+            [Path(f"{match['file_id']}/{match['page_id']}.jpg") for match in matches],
+        )
         yield (
             json.dumps(
                 {
                     "text": substitute_objects(
-                        request_with_images(
-                            query,
-                            [
-                                Path(f"{match['file_id']}/{match['page_id']}.jpg")
-                                for match in matches
-                            ],
-                        ),
+                        llm_response,
                         links_to_matches,
                     ),
                     "images": [],
