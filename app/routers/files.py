@@ -14,6 +14,7 @@ from fastapi.responses import (
 )
 
 from ..db import index_uploaded_files
+from .conversion import convert_cyrillic_to_pdf
 
 router = APIRouter()
 
@@ -163,11 +164,23 @@ async def upload_files(files: List[UploadFile] = File(...)):
     for file in files:
         if not file.filename:
             return "Failed"
-
+        if file.content_type not in ["text/plain", "text/markdown", "application/pdf"]:
+            raise HTTPException(
+                "422",
+                detail=f"Uploaded file in unsupported format: {file.content_type}",
+            )
         file_path = uploads_dir / file.filename
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
+
+        if file.content_type in ["text/plain", "text/markdown"]:
+            file_path = convert_cyrillic_to_pdf(
+                input_file=file_path,
+                output_pdf=file_path.with_suffix(".pdf"),
+                font_path="./assets/NotoSans-VariableFont_wdth,wght.ttf",
+            )
+
         saved_files.append(file_path)
 
     return StreamingResponse(
