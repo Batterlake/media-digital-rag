@@ -53,7 +53,8 @@ async def search_with_image(
         multivector_query = await run_in_threadpool(colpali_client.embed_texts, [query])
         multivector_query = multivector_query[0]
         yield (
-            json.dumps({"text": "Generating text embeddings...", "images": []}) + "\n"
+            json.dumps({"text": "Обработка текстовых представлений...", "images": []})
+            + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
@@ -63,7 +64,12 @@ async def search_with_image(
             )
             multivector_image = multivector_image[0]
             yield (
-                json.dumps({"text": "Generating image embeddings...", "images": []})
+                json.dumps(
+                    {
+                        "text": "Обработка представлений изображений...",
+                        "images": [],
+                    }
+                )
                 + "\n"
             ).encode("utf-8")
             await asyncio.sleep(0.5)
@@ -74,7 +80,7 @@ async def search_with_image(
         yield (
             json.dumps(
                 {
-                    "text": f"Found top {top_k} pages for query...",
+                    "text": "Выполняется поиск по базе...",
                     "images": [],
                     "links": [],
                 }
@@ -89,7 +95,7 @@ async def search_with_image(
             yield (
                 json.dumps(
                     {
-                        "text": f"Found top {top_k} pages for images...",
+                        "text": "Продолжается поиск по базе...",
                         "images": [],
                         "links": [],
                     }
@@ -130,7 +136,7 @@ async def search_with_image(
         yield (
             json.dumps(
                 {
-                    "text": "Analyzing...",
+                    "text": "Обработка данных...",
                     "images": [m.get_preview_image_file() for m in (matches)],
                     "heatmaps": [f"/heatmaps/{hm.name}" for hm in hm_links],
                     "links": [
@@ -140,7 +146,7 @@ async def search_with_image(
             )
             + "\n"
         ).encode("utf-8")
-        print([f"/heatmaps/{hm.name}" for hm in hm_links])
+
         # top-k documents -> llm
         await asyncio.sleep(0.5)
         llm_response = await run_in_threadpool(

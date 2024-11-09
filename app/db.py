@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -46,7 +47,7 @@ def upsert_to_qdrant(points):
             wait=False,
         )
     except Exception as e:
-        print(f"Error during upsert: {e}")
+        logging.error(f"Error during upsert: {e}")
         return False
     return True
 
@@ -76,7 +77,7 @@ def index_uploaded_files(uploaded_files: list[Path], batch_size: int = 8):
             try:
                 upsert_to_qdrant(points)
             except Exception as e:
-                print(f"Error during upsert: {e}")
+                logging.error(f"Error during upsert: {e}")
                 continue
 
             # Update the progress bar

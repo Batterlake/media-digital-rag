@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import math
 import os
 from pathlib import Path
@@ -52,7 +53,7 @@ def get_pdf_first_page(pdf_path):
                 page.write_to_file(str(preview_path))
                 return f"/previews/{preview_name}"
         except Exception as e:
-            print(f"Error generating preview for {pdf_path}: {e}")
+            logging.error(f"Error generating preview for {pdf_path}: {e}")
             return None
     else:
         return f"/previews/{preview_name}"
@@ -99,10 +100,10 @@ async def process_upload(files: List[Path]):
                     # Update conversion progress
                     async for chunk in send_progress(
                         {
-                            "stage": "converting",
+                            "stage": "преобразование",
                             "file": file_path.name,
                             "progress": (i + 1) / total_pages * 100,
-                            "message": f"Converting page {i + 1} of {total_pages} for {file_path.name}...",
+                            "message": f"Преобразование страницы {i + 1} из {total_pages} для {file_path.name}...",
                         }
                     ):
                         yield chunk
@@ -119,7 +120,7 @@ async def process_upload(files: List[Path]):
 
             except Exception as e:
                 async for chunk in send_progress(
-                    {"error": f"Failed to process {file_path.name}: {str(e)}"}
+                    {"error": f"Не удалось обработать {file_path.name}: {str(e)}"}
                 ):
                     yield chunk
                 return
@@ -128,9 +129,9 @@ async def process_upload(files: List[Path]):
             # Indexing progress
             async for chunk in send_progress(
                 {
-                    "stage": "indexing",
+                    "stage": "индексирование",
                     "progress": 50,
-                    "message": "Indexing uploaded files...",
+                    "message": "Индексирование загруженных файлов...",
                 }
             ):
                 yield chunk
@@ -141,16 +142,16 @@ async def process_upload(files: List[Path]):
         # Complete
         async for chunk in send_progress(
             {
-                "stage": "complete",
+                "stage": "Готово",
                 "progress": 100,
-                "message": "Upload complete",
+                "message": "Загрузка завершена",
                 "files": uploaded_files,
             }
         ):
             yield chunk
 
     except Exception as e:
-        async for chunk in send_progress({"error": f"Upload failed: {str(e)}"}):
+        async for chunk in send_progress({"error": f"Загрузка не удалась: {str(e)}"}):
             yield chunk
 
 
@@ -253,7 +254,7 @@ async def files(
 async def get_pdf(filename: str):
     file_path = Path("uploads") / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="PDF file not found")
+        raise HTTPException(status_code=404, detail="Файл PDF не найден")
     return FileResponse(
         path=file_path,
         media_type="application/pdf",
