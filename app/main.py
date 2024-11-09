@@ -1,6 +1,7 @@
 import logging
 import logging.config
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import yaml
 from fastapi import FastAPI
@@ -67,6 +68,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Path("previews/").mkdir(exist_ok=True)
+Path("uploads/").mkdir(exist_ok=True)
+Path("logs/").mkdir(exist_ok=True)
+Path("temp_uploads/").mkdir(exist_ok=True)
 
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
