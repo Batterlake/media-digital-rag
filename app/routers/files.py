@@ -69,8 +69,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
             content = await file.read()
             with open(file_path, "wb") as f:
                 f.write(content)
-
-            pages = convert_from_path(file_path, 300)
+            pages = convert_from_path(file_path, 100)
             for i, page in enumerate(pages):
                 preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
                 Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
@@ -83,7 +82,6 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 "size": os.path.getsize(file_path) / 1024,  # size in KB
                 "path": str(file_path),
             }
-
             # Generate preview for PDFs
             if file_path.suffix.lower() == ".pdf":
                 preview_url = get_pdf_preview(file_path)
