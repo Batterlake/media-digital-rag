@@ -69,7 +69,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
             pages = convert_from_path(file_path, 300)
             for i, page in enumerate(pages):
-                preview_path = f"previews/{Path(file_path).stem}{i}.jpg"
+                preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
                 Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
                 page.save(preview_path, "JPEG")
 
