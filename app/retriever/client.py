@@ -9,8 +9,8 @@ class ColpaliClient:
     HEATMAPS_ROUTE = "heatmaps"
     EMBEDDING_DIM = 128
 
-    def __init__(self, host: str, port: int):
-        self.url = f"http://{host}:{port}"
+    def __init__(self, url: str):
+        self.url = url
 
     def embed_images(self, filenames: list[str]) -> np.ndarray | None:
         files = [("images", (image, open(image, "rb"))) for image in filenames]
