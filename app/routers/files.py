@@ -69,6 +69,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
             content = await file.read()
             with open(file_path, "wb") as f:
                 f.write(content)
+
             pages = convert_from_path(file_path, 100)
             for i, page in enumerate(pages):
                 preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
