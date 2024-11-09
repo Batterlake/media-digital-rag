@@ -47,14 +47,18 @@ async def search_with_image(
 ) -> AsyncGenerator[bytes, None]:
     """Generate streaming search results with text and images."""
     try:
-        multivector_query = colpali_client.embed_texts([query])[0]
+        multivector_query = await run_in_threadpool(colpali_client.embed_texts, [query])
+        multivector_query = multivector_query[0]
         yield (
             json.dumps({"text": "Generating text embeddings...", "images": []}) + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
         if image_path:
-            multivector_image = colpali_client.embed_images([str(image_path)])[0]
+            multivector_image = await run_in_threadpool(
+                colpali_client.embed_images, [str(image_path)]
+            )
+            multivector_image = multivector_image[0]
             yield (
                 json.dumps({"text": "Generating image embeddings...", "images": []})
                 + "\n"
