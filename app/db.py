@@ -2,11 +2,13 @@ from pathlib import Path
 
 import numpy as np
 import stamina
-from PIL import Image
 from qdrant_client.http import models
+from retriever.client import ColpaliClient
 from tqdm import tqdm
 
 from app.main import COLLECTION_NAME, get_qdrant_client
+
+colpali_client = ColpaliClient("colpali", port=8000)
 
 
 def get_payload_id_from_filename(filename: str):
@@ -37,18 +39,8 @@ def index_uploaded_files(uploaded_files: list[Path], batch_size: int = 8):
         for i in range(0, len(uploaded_files), batch_size):
             batch = uploaded_files[i : i + batch_size]
 
-            # The images are already PIL Image objects, so we can use them directly
-            images = [Image.open(el) for el in batch]
-
             # Process and encode images
-            # with torch.no_grad():
-            #     batch_images = colpali_processor.process_images(images).to(
-            #         colpali_model.device
-            #     )
-            #     image_embeddings = colpali_model(**batch_images)
-            image_embeddings = np.random.uniform(
-                0, 1, size=(len(images), 500, 128)
-            ).astype(np.float32)
+            image_embeddings = colpali_client.embed_images(batch).astype(np.float32)
 
             # Prepare points for Qdrant
             points = []
