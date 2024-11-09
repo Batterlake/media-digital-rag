@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Digital Media Hub{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <div class="search-results-container">
+        <div class="search-history"></div>
+    </div>
+
+    <div class="initial-search">
+        <h1>Digital Media Management</h1>
+        <!-- Search Bar in initial state -->
+        <div class="search-bar-wrapper initial">
+            <div class="search-bar-content">
+                <button class="attach-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                </button>
+                <div class="search-input-group">
+                    <input type="text" class="search-box" placeholder="Search your media files...">
+                    <button class="search-button" id="searchButton">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Modal for viewing images -->
+<div class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Media Gallery</h3>
+            <div class="modal-controls">
+                <button class="modal-btn close-modal">&times;</button>
+            </div>
+        </div>
+        <div class="modal-main">
+            <div class="modal-thumbnails"></div>
+            <div class="modal-preview">
+                <img src="" alt="Preview">
+                <div class="modal-nav">
+                    <button class="prev-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <button class="next-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-out">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+            <button class="zoom-btn zoom-in">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const initialSearch = document.querySelector('.initial-search');
+        const searchButton = document.getElementById('searchButton');
+        const searchBox = document.querySelector('.search-box');
+        const resultsContainer = document.querySelector('.search-results-container');
+        const searchHistory = document.querySelector('.search-history');
+        const modal = document.querySelector('.modal');
+        const modalPreview = document.querySelector('.modal-preview img');
+        const modalThumbnails = document.querySelector('.modal-thumbnails');
+        const closeModal = document.querySelector('.close-modal');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        const zoomIn = document.querySelector('.zoom-in');
+        const zoomOut = document.querySelector('.zoom-out');
+        const searchBarWrapper = document.querySelector('.search-bar-wrapper');
+
+        let currentImageIndex = 0;
+        let currentImages = [];
+        let currentZoom = 1;
+        let isFirstSearch = true;
+        let activeSearchBox = searchBox;
+        let isSearching = false;
+
+        function createLoadingAnimation() {
+            const loadingDots = document.createElement('div');
+            loadingDots.className = 'loading-dots';
+            loadingDots.innerHTML = `
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            `;
+            return loadingDots;
+        }
+
+        function updateModalImage() {
+            modalPreview.src = currentImages[currentImageIndex];
+            const thumbnails = modalThumbnails.querySelectorAll('.modal-thumbnail');
+            thumbnails.forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === currentImageIndex);
+            });
+            currentZoom = 1;
+            modalPreview.style.transform = `scale(${currentZoom})`;
+        }
+
+        function handleZoom(delta) {
+            currentZoom = Math.max(1, Math.min(3, currentZoom + delta));
+            modalPreview.style.transform = `scale(${currentZoom})`;
+        }
+
+        function scrollToContent(element, offset = 0) {
+            const rect = element.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const targetY = rect.top + scrollTop - offset;
+
+            window.scrollTo({
+                top: targetY,
+                behavior: 'smooth'
+            });
+        }
+
+        function setupSearchListeners(searchBox, searchButton) {
+            const handleSearch = () => {
+                if (!isSearching) {
+                    performSearch(searchBox.value);
+                }
+            };
+
+            searchBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                }
+            });
+
+            searchButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleSearch();
+            });
+        }
+
+        zoomIn.addEventListener('click', () => handleZoom(0.2));
+        zoomOut.addEventListener('click', () => handleZoom(-0.2));
+
+        prevBtn.addEventListener('click', () => {
+            currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+            updateModalImage();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+            updateModalImage();
+        });
+
+        async function performSearch(query) {
+            if (!query.trim() || isSearching) return;
+
+            isSearching = true;
+            const searchSection = document.createElement('div');
+            searchSection.className = 'search-section';
+
+            const queryDiv = document.createElement('div');
+            queryDiv.className = 'search-query';
+            queryDiv.textContent = `"${query}"`;
+            searchSection.appendChild(queryDiv);
+
+            const resultsContent = document.createElement('div');
+            resultsContent.className = 'results-content';
+
+            const streamText = document.createElement('div');
+            streamText.className = 'stream-text';
+
+            const loadingDots = createLoadingAnimation();
+            streamText.appendChild(loadingDots);
+
+            const previewGrid = document.createElement('div');
+            previewGrid.className = 'preview-grid';
+
+            resultsContent.appendChild(streamText);
+            resultsContent.appendChild(previewGrid);
+            searchSection.appendChild(resultsContent);
+
+            if (isFirstSearch) {
+                searchBarWrapper.classList.remove('initial');
+                searchBarWrapper.classList.add('sticky');
+                initialSearch.classList.add('hidden');
+
+                // Clone the search bar and move it to results container
+                const searchBarClone = searchBarWrapper.cloneNode(true);
+                searchBarClone.classList.add('sticky');
+
+                // Hide original search bar
+                setTimeout(() => {
+                    initialSearch.style.display = 'none';
+                    resultsContainer.classList.add('visible');
+                }, 400);
+
+                isFirstSearch = false;
+                activeSearchBox = searchBarClone.querySelector('.search-box');
+
+                // Setup event listeners for the cloned search bar
+                setupSearchListeners(
+                    activeSearchBox,
+                    searchBarClone.querySelector('.search-button')
+                );
+
+                // Insert search section first
+                searchHistory.insertBefore(searchSection, searchHistory.firstChild);
+                // Then append the search bar after it
+                searchHistory.insertBefore(searchBarClone, searchSection.nextSibling);
+            } else {
+                // For subsequent searches, insert new section before the search bar
+                const stickySearchBar = searchHistory.querySelector('.search-bar-wrapper.sticky');
+                searchHistory.insertBefore(searchSection, stickySearchBar);
+            }
+
+            // Scroll to the new search section
+            scrollToContent(searchSection);
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                let isFirstChunk = true;
+                let lastMessage = null;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = JSON.parse(decoder.decode(value));
+
+                    if (isFirstChunk) {
+                        streamText.removeChild(loadingDots);
+                        isFirstChunk = false;
+                    }
+
+                    if (chunk.text) {
+                        const textDiv = document.createElement('div');
+                        textDiv.className = 'message';
+                        textDiv.textContent = chunk.text;
+                        streamText.appendChild(textDiv);
+                        lastMessage = textDiv;
+
+                        // Scroll to show the new message with offset for the sticky search bar
+                        scrollToContent(textDiv, 200);
+                    }
+
+                    if (chunk.images && chunk.images.length > 0) {
+                        currentImages = chunk.images;
+                        const imageElements = chunk.images.slice(0, 4).map(img => `
+                            <div class="preview-image">
+                                <img src="${img}" alt="Preview">
+                            </div>
+                        `).join('');
+                        previewGrid.innerHTML = imageElements;
+
+                        if (chunk.images.length > 4) {
+                            const viewAllBtn = document.createElement('button');
+                            viewAllBtn.className = 'view-all-btn';
+                            viewAllBtn.textContent = 'View All';
+                            viewAllBtn.onclick = () => {
+                                modalThumbnails.innerHTML = chunk.images.map((img, i) => `
+                                    <div class="modal-thumbnail ${i === 0 ? 'active' : ''}" data-index="${i}">
+                                        <img src="${img}" alt="Thumbnail">
+                                    </div>
+                                `).join('');
+
+                                modalThumbnails.querySelectorAll('.modal-thumbnail').forEach(thumb => {
+                                    thumb.addEventListener('click', () => {
+                                        currentImageIndex = parseInt(thumb.dataset.index);
+                                        updateModalImage();
+                                    });
+                                });
+
+                                currentImageIndex = 0;
+                                modalPreview.src = chunk.images[0];
+                                modal.style.display = 'flex';
+                                setTimeout(() => modal.classList.add('visible'), 10);
+                            };
+                            previewGrid.appendChild(viewAllBtn);
+                        }
+                    }
+                }
+
+                // After all content is loaded, scroll to the last message
+                if (lastMessage) {
+                    scrollToContent(lastMessage, 200);
+                }
+
+                activeSearchBox.value = '';
+            } catch (error) {
+                console.error('Search error:', error);
+                streamText.removeChild(loadingDots);
+                streamText.innerHTML += '<div class="message error">An error occurred during search.</div>';
+            } finally {
+                isSearching = false;
+            }
+        }
+
+        // Setup initial search bar listeners
+        setupSearchListeners(searchBox, searchButton);
+
+        closeModal.addEventListener('click', () => {
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                currentZoom = 1;
+                modalPreview.style.transform = `scale(${currentZoom})`;
+            }, 400);
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('visible');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    currentZoom = 1;
+                    modalPreview.style.transform = `scale(${currentZoom})`;
+                }, 400);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (modal.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') prevBtn.click();
+                else if (e.key === 'ArrowRight') nextBtn.click();
+                else if (e.key === 'Escape') closeModal.click();
+            }
+        });
+    });
+</script>
+{% endblock %}
