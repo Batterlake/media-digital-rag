@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Path("previews/").mkdir(exist_ok=True)
+    Path("uploads/").mkdir(exist_ok=True)
+    Path("logs/").mkdir(exist_ok=True)
+    Path("temp_uploads/").mkdir(exist_ok=True)
+
     qdrant_client = get_qdrant_client()
     collection_name = QDRANT_COLLECTION_NAME
     if not qdrant_client.collection_exists(collection_name=collection_name):
