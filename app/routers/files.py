@@ -26,11 +26,11 @@ def get_file_type(filename):
 def get_pdf_preview(pdf_path):
     """Generate preview image for PDF first page"""
     # Create temp directory for preview images
-    preview_dir = Path("app/static/previews")
+    preview_dir = Path("previews/")
     preview_dir.mkdir(exist_ok=True)
 
     # Generate preview filename
-    preview_name = f"{Path(pdf_path).stem}_preview.jpg"
+    preview_name = f"{Path(pdf_path).stem}/0.jpg"
     preview_path = preview_dir / preview_name
 
     # Only generate preview if it doesn't exist
@@ -39,13 +39,14 @@ def get_pdf_preview(pdf_path):
             # Convert first page of PDF to image
             pages = convert_from_path(pdf_path, first_page=1, last_page=1)
             if pages:
+                Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
                 pages[0].save(str(preview_path), "JPEG")
-                return f"/static/previews/{preview_name}"
+                return f"/previews/{preview_name}"
         except Exception as e:
             print(f"Error generating preview for {pdf_path}: {e}")
             return None
     else:
-        return f"/static/previews/{preview_name}"
+        return f"/previews/{preview_name}"
 
     return None
 
@@ -65,6 +66,12 @@ async def upload_files(files: List[UploadFile] = File(...)):
             content = await file.read()
             with open(file_path, "wb") as f:
                 f.write(content)
+
+            pages = convert_from_path(file_path, 300)
+            for i, page in enumerate(pages):
+                preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
+                Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
+                page.save(preview_path, "JPEG")
 
             file_data = {
                 "name": file.filename,
