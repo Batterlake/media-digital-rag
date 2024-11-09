@@ -9,7 +9,7 @@ run:
 	tmux attach -t web
 
 stop:
-	tmux kill -t web
+	tmux kill-session -t web
 
 download-dataset:
 	mkdir -p ./data
@@ -24,3 +24,6 @@ convert-pdfs:
 
 deploy:
 	docker compose up -d
+
+uvicorn:
+	uvicorn app.main:app --reload --port 50004 --host 0.0.0.0
