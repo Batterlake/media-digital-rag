@@ -129,89 +129,193 @@ body {
     animation: fadeIn 0.8s ease-out;
 }
 
-.search-bar-wrapper {
+/* Files Page Styles */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
     background: var(--glass-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: slideUp 0.6s ease-out;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.search-bar-wrapper.initial {
-    box-shadow: 0 8px 32px 0 var(--glass-shadow);
-}
-
-.search-bar-wrapper.sticky {
-    position: sticky;
-    bottom: 1rem;
-    margin-top: 2rem;
-    z-index: 40;
-    box-shadow: 0 4px 12px 0 var(--glass-shadow);
-}
-
-.search-bar-content {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    gap: 0.75rem;
-}
-
-.attach-button {
-    background: none;
-    border: none;
+    border-radius: 12px;
     padding: 0.5rem;
-    cursor: pointer;
-    color: #6b7280;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-}
-
-.attach-button:hover {
-    background-color: var(--hover-bg);
-    transform: scale(1.05);
-}
-
-.search-input-group {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    width: 300px;
 }
 
 .search-box {
     flex: 1;
     border: none;
     outline: none;
-    font-size: 1.1rem;
-    padding: 0.75rem;
-    color: var(--text-color);
-    font-family: inherit;
     background: transparent;
-    letter-spacing: -0.01em;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-color);
 }
 
-.search-box::placeholder {
-    color: #9ca3af;
-}
-
-.search-button {
+.search-arrow {
     background: none;
     border: none;
     padding: 0.5rem;
     cursor: pointer;
-    color: #6b7280;
-    border-radius: 10px;
+    color: var(--text-color);
     transition: all 0.3s ease;
 }
 
-.search-button:hover {
-    background-color: var(--hover-bg);
-    transform: scale(1.05);
+.search-arrow:hover {
+    color: var(--primary-color);
+    transform: translateX(2px);
+}
+
+.upload-container {
+    position: relative;
+}
+
+.file-input {
+    display: none;
+}
+
+.upload-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.upload-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.grid-item {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.media-item {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.media-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--glass-shadow);
+}
+
+.preview-container {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 1.5rem;
+}
+
+.preview-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.preview-container svg {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.file-info {
+    padding: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.filename {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state svg {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    opacity: 0.5;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.page-btn {
+    padding: 0.5rem 1rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.page-btn:not(:disabled):hover {
+    background: var(--hover-bg);
+    transform: translateY(-2px);
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    color: #6b7280;
+    font-size: 0.95rem;
 }
 
 /* Search Results Styles */
