@@ -27,12 +27,12 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
             + "2. Several documents contain related information\n"
             + "3. Found some relevant media files\n\n",
             "images": [
-                "/static/previews/0_preview.jpg",
-                "/static/previews/1_preview.jpg",
-                "/static/previews/2_preview.jpg",
-                "/static/previews/3_preview.jpg",
-                "/static/previews/4_preview.jpg",
-                "/static/previews/5_preview.jpg",
+                "/previews/0/0.jpg",
+                "/previews/1/0.jpg",
+                "/previews/2/0.jpg",
+                "/previews/3/0.jpg",
+                "/previews/4/0.jpg",
+                "/previews/5/0.jpg",
             ],
         },
         {
