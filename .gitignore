@@ -1,3 +1,4 @@
+uploads/
 vllm.env
 data/*
 !data/.gitkeep

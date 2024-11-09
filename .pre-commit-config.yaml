@@ -3,13 +3,13 @@ ci:
     \ hooks"
   autoupdate_commit_msg: "\u2B06 [pre-commit.ci] pre-commit autoupdate"
 repos:
-# - hooks:
-#   - args:
-#     - --pin-patterns
-#     - '[pin];[donotremove]'
-#     id: jupyter-notebook-cleanup
-#   repo: https://github.com/roy-ht/pre-commit-jupyter
-#   rev: v1.2.1
+- hooks:
+  - args:
+    - --pin-patterns
+    - '[pin];[donotremove]'
+    id: jupyter-notebook-cleanup
+  repo: https://github.com/roy-ht/pre-commit-jupyter
+  rev: v1.2.1
 - hooks:
   - id: check-added-large-files
   - id: check-toml
