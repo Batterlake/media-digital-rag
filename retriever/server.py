@@ -4,7 +4,7 @@ from itertools import islice
 import torch
 from colpali_engine.models import ColPali, ColPaliProcessor
 from colpali_engine.utils.torch_utils import get_torch_device
-from fastapi import FastAPI, Request, UploadFile, Response
+from fastapi import FastAPI, Request, Response, UploadFile
 from PIL import Image
 
 device = get_torch_device("auto")
@@ -44,10 +44,11 @@ async def embed_images(
         media_type="binary/octet-stream",
     )
 
+
 @app.post("/embed_texts/")
 async def embed_texts(request: Request):
     data = await request.json()
-    texts = data['texts'] 
+    texts = data["texts"]
     embeddings = []
     for batch in batched(texts, batch_size):
         with torch.inference_mode():

@@ -1,5 +1,5 @@
-import requests
 import numpy as np
+import requests
 
 
 class ColpaliClient:
@@ -9,17 +9,19 @@ class ColpaliClient:
 
     def __init__(self, host: str, port: int):
         self.url = f"http://{host}:{port}"
-    
+
     def embed_images(self, filenames: list[str]) -> np.ndarray | None:
-        files = [('images', (image, open(image, 'rb'))) for image in filenames]
+        files = [("images", (image, open(image, "rb"))) for image in filenames]
         url = f"{self.url}/{self.IMAGE_ROUTE}/"
         response = requests.post(
             url,
             files=files,
         )
         try:
-            embeds = np.frombuffer(response.content, dtype=np.float16).reshape(len(filenames), -1, 128)
-        except:
+            embeds = np.frombuffer(response.content, dtype=np.float16).reshape(
+                len(filenames), -1, 128
+            )
+        except Exception:
             embeds = None
         return embeds
 
@@ -30,7 +32,9 @@ class ColpaliClient:
             json={"texts": texts},
         )
         try:
-            embeds = np.frombuffer(response.content, dtype=np.float16).reshape(len(texts), -1, 128)
-        except:
+            embeds = np.frombuffer(response.content, dtype=np.float16).reshape(
+                len(texts), -1, 128
+            )
+        except Exception:
             embeds = None
         return embeds

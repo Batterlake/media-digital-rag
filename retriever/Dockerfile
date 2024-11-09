@@ -6,7 +6,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-RUN pip install fastapi==0.115.4 colpali_engine==0.3.4 
+RUN pip install fastapi==0.115.4 colpali_engine==0.3.4
 RUN pip install fastapi[standard]
 
 COPY . /app
