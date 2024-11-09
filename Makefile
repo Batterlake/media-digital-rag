@@ -26,4 +26,4 @@ deploy:
 	docker compose up -d
 
 uvicorn:
-	uvicorn app.main:app --reload --port 50004 --host 0.0.0.0
+	uvicorn app.main:app --reload --port 50004 --host 0.0.0.0 --workers 20

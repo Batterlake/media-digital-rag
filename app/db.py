@@ -74,6 +74,10 @@ def index_uploaded_files(uploaded_files: list[Path], batch_size: int = 8):
 
             # Update the progress bar
             pbar.update(batch_size)
+    # get_qdrant_client().update_collection(
+    #     collection_name=QDRANT_COLLECTION_NAME,
+    #     optimizer_config=models.OptimizersConfigDiff(indexing_threshold=10),
+    # ) # todo: find a better place to optimize index
 
 
 def vector_search(multivector_query, top_k: int = 10):
