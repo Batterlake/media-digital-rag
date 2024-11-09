@@ -8,6 +8,9 @@ WORKDIR /app
 
 RUN pip install fastapi==0.115.4 colpali_engine==0.3.4
 RUN pip install fastapi[standard]
+RUN pip install einops
+RUN pip install matplotlib
+RUN pip install "colpali-engine[interpretability]"
 
 COPY . /app
 
