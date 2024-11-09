@@ -3539,20 +3539,6 @@ files = [
 ]
 
 [[package]]
-name = "pdf2image"
-version = "1.17.0"
-description = "A wrapper around the pdftoppm and pdftocairo command line tools to convert PDF to a PIL Image list."
-optional = false
-python-versions = "*"
-files = [
-    {file = "pdf2image-1.17.0-py3-none-any.whl", hash = "sha256:ecdd58d7afb810dffe21ef2b1bbc057ef434dabbac6c33778a38a3f7744a27e2"},
-    {file = "pdf2image-1.17.0.tar.gz", hash = "sha256:eaa959bc116b420dd7ec415fcae49b98100dda3dd18cd2fdfa86d09f112f6d57"},
-]
-
-[package.dependencies]
-pillow = "*"
-
-[[package]]
 name = "peft"
 version = "0.11.1"
 description = "Parameter-Efficient Fine-Tuning (PEFT)"
@@ -3691,6 +3677,17 @@ mic = ["olefile"]
 tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
 typing = ["typing-extensions"]
 xmp = ["defusedxml"]
+
+[[package]]
+name = "pkgconfig"
+version = "1.5.5"
+description = "Interface Python with pkg-config"
+optional = false
+python-versions = ">=3.3,<4.0"
+files = [
+    {file = "pkgconfig-1.5.5-py3-none-any.whl", hash = "sha256:d20023bbeb42ee6d428a0fac6e0904631f545985a10cdd71a20aa58bc47a4209"},
+    {file = "pkgconfig-1.5.5.tar.gz", hash = "sha256:deb4163ef11f75b520d822d9505c1f462761b4309b1bb713d08689759ea8b899"},
+]
 
 [[package]]
 name = "platformdirs"
@@ -4273,6 +4270,24 @@ files = [
     {file = "pytz-2024.2-py2.py3-none-any.whl", hash = "sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725"},
     {file = "pytz-2024.2.tar.gz", hash = "sha256:2aa355083c50a0f93fa581709deac0c9ad65cca8a9e9beac660adcbd493c798a"},
 ]
+
+[[package]]
+name = "pyvips"
+version = "2.2.3"
+description = "binding for the libvips image processing library, API mode"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyvips-2.2.3.tar.gz", hash = "sha256:43bceced0db492654c93008246a58a508e0373ae1621116b87b322f2ac72212f"},
+]
+
+[package.dependencies]
+cffi = ">=1.0.0"
+pkgconfig = "*"
+
+[package.extras]
+doc = ["sphinx", "sphinx_rtd_theme"]
+test = ["cffi (>=1.0.0)", "pyperf", "pytest"]
 
 [[package]]
 name = "pywin32"
@@ -6220,4 +6235,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "c02eeba562593c04c08b1be6a724f4f85bf5db862513b6612e7789d2987ba7cc"
+content-hash = "b2d6a668a4874b29280b7b04c679f56d0e1666b30d6a5f9500e843a19e5057d0"
