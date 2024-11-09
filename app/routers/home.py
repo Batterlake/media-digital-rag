@@ -195,8 +195,7 @@ async def describe_image(
         multivector_query = await run_in_threadpool(colpali_client.embed_texts, [query])
         multivector_query = multivector_query[0]
         yield (
-            json.dumps({"text": "Обработка текстовых представлений...", "images": []})
-            + "\n"
+            json.dumps({"text": "Обработка текстовых представлений..."}) + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
@@ -209,7 +208,6 @@ async def describe_image(
                 json.dumps(
                     {
                         "text": "Обработка представлений изображений...",
-                        "images": [],
                     }
                 )
                 + "\n"
@@ -221,13 +219,12 @@ async def describe_image(
         llm_response = await run_in_threadpool(
             request_with_images,
             query,
-            image_path,
+            [image_path],
         )
         yield (
             json.dumps(
                 {
                     "text": llm_response,
-                    "images": [str(image_path)],
                 },
                 ensure_ascii=False,
             )
@@ -239,7 +236,6 @@ async def describe_image(
             json.dumps(
                 {
                     "text": "Не получилось обработать запрос",
-                    "images": [],
                 }
             )
             + "\n"

@@ -57,6 +57,7 @@
         let activeSearchBox = searchBox;
         let isSearching = false;
         let selectedImage = null;
+        let selectedImageUrl = null;
         let activeFileInput = document.getElementById('imageInput');
         let activeAttachButton = document.getElementById('attachButton');
         let activeFileIcon = document.querySelector('.file-attached-icon');
@@ -73,6 +74,7 @@
             fileInput.addEventListener('change', function (e) {
                 if (e.target.files && e.target.files[0]) {
                     selectedImage = e.target.files[0];
+                    selectedImageUrl = URL.createObjectURL(selectedImage);
                     fileIcon.style.display = 'inline-block';
                     attachButton.style.color = '#4CAF50';
                 }
@@ -92,7 +94,11 @@
         );
 
         function resetAttachment() {
+            if (selectedImageUrl) {
+                URL.revokeObjectURL(selectedImageUrl);
+            }
             selectedImage = null;
+            selectedImageUrl = null;
             activeFileIcon.style.display = 'none';
             activeAttachButton.style.color = '';
             activeFileInput.value = '';
@@ -194,12 +200,28 @@
             const resultsContent = document.createElement('div');
             resultsContent.className = 'results-content';
 
+            // Create flex container for image and text
+            const contentFlexContainer = document.createElement('div');
+            contentFlexContainer.className = 'content-flex-container';
+
+            // Add image preview if an image is selected
+            if (selectedImageUrl) {
+                const imagePreview = document.createElement('div');
+                imagePreview.className = 'image-preview';
+                const img = document.createElement('img');
+                img.src = selectedImageUrl;
+                img.alt = 'Uploaded image';
+                imagePreview.appendChild(img);
+                contentFlexContainer.appendChild(imagePreview);
+            }
+
             const streamText = document.createElement('div');
             streamText.className = 'stream-text markdown-content';
 
             const loadingDots = createLoadingAnimation();
 
-            resultsContent.appendChild(streamText);
+            contentFlexContainer.appendChild(streamText);
+            resultsContent.appendChild(contentFlexContainer);
             resultsContent.appendChild(loadingDots);
             searchSection.appendChild(resultsContent);
 
@@ -255,7 +277,7 @@
                     formData.append('image', selectedImage);
                 }
 
-                const response = await fetch('/api/search', {
+                const response = await fetch('/api/describe', {
                     method: 'POST',
                     body: formData
                 });
@@ -318,6 +340,33 @@
         border-radius: 50%;
         padding: 2px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Content flex container */
+    .content-flex-container {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    /* Image preview styles */
+    .image-preview {
+        flex: 0 0 300px;
+        max-width: 300px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .stream-text {
+        flex: 1;
+        min-width: 0;
     }
 
     /* Message transition styles */
@@ -412,6 +461,17 @@
 
     .markdown-content th {
         background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        .content-flex-container {
+            flex-direction: column;
+        }
+
+        .image-preview {
+            max-width: 100%;
+        }
     }
 </style>
 {% endblock %}
