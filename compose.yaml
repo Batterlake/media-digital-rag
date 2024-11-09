@@ -38,7 +38,7 @@ services:
   colpali:
     image: colpali-retriever
     build:
-      context: retriever
+      context: app/retriever
       dockerfile: Dockerfile
     environment:
       batch_size: 8
