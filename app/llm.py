@@ -12,10 +12,10 @@ Given a user question and some images, \
 answer the user question and provide citations. \
 If none of the images answer the question, just say you don't know.
 
-### Answer format ###
-On image @{image_number}@ was mentioned ...
-Also on image @{image_number}@ was mentioned ...
 """
+### Answer format ###
+# On image @{image_number}@ was mentioned ...
+# Also on image @{image_number}@ was mentioned ...
 
 
 def encode_base64(image_path: str | Path):
