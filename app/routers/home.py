@@ -187,6 +187,65 @@ async def search_with_image(
         ).encode("utf-8")
 
 
+async def describe_image(
+    query: str, image_path: Path | None = None
+) -> AsyncGenerator[bytes, None]:
+    """Generate streaming search results with text and images."""
+    try:
+        multivector_query = await run_in_threadpool(colpali_client.embed_texts, [query])
+        multivector_query = multivector_query[0]
+        yield (
+            json.dumps({"text": "Обработка текстовых представлений...", "images": []})
+            + "\n"
+        ).encode("utf-8")
+        await asyncio.sleep(0.5)
+
+        if image_path:
+            multivector_image = await run_in_threadpool(
+                colpali_client.embed_images, [str(image_path)]
+            )
+            multivector_image = multivector_image[0]
+            yield (
+                json.dumps(
+                    {
+                        "text": "Обработка представлений изображений...",
+                        "images": [],
+                    }
+                )
+                + "\n"
+            ).encode("utf-8")
+            await asyncio.sleep(0.5)
+
+        # top-k documents -> llm
+        await asyncio.sleep(0.5)
+        llm_response = await run_in_threadpool(
+            request_with_images,
+            query,
+            image_path,
+        )
+        yield (
+            json.dumps(
+                {
+                    "text": llm_response,
+                    "images": [str(image_path)],
+                },
+                ensure_ascii=False,
+            )
+            + "\n"
+        ).encode("utf-8")
+    except Exception as exc:
+        logging.error(exc)
+        yield (
+            json.dumps(
+                {
+                    "text": "Не получилось обработать запрос",
+                    "images": [],
+                }
+            )
+            + "\n"
+        ).encode("utf-8")
+
+
 @router.post("/api/search")
 async def search(q: str = Form(...), image: UploadFile = File(None)):
     """Search endpoint that returns streaming results."""
@@ -202,6 +261,23 @@ async def search(q: str = Form(...), image: UploadFile = File(None)):
             search_with_image(q, image_path), media_type="application/x-ndjson"
         )
     return StreamingResponse(search_with_image(q), media_type="application/x-ndjson")
+
+
+@router.post("/api/describe")
+async def describe(q: str = Form(...), image: UploadFile = File(None)):
+    """Describe image by user query, returns streaming results."""
+    if image and image.filename:
+        # Save uploaded image temporarily
+        temp_path = Path("temp_uploads")
+        temp_path.mkdir(exist_ok=True)
+        image_path = temp_path / image.filename
+        with open(image_path, "wb") as f:
+            content = await image.read()
+            f.write(content)
+        return StreamingResponse(
+            describe_image(q, image_path), media_type="application/x-ndjson"
+        )
+    return StreamingResponse(describe_image(q), media_type="application/x-ndjson")
 
 
 # Keep the GET endpoint for backward compatibility
