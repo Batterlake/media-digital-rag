@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from app.main import COLLECTION_NAME, get_qdrant_client
 
-colpali_client = ColpaliClient("colpali", port=8000)
+colpali_client = ColpaliClient("ml.n19", port=6339)
 
 
 def get_payload_id_from_filename(filename: str):
