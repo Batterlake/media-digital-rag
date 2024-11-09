@@ -24,6 +24,13 @@ async def home(request: Request):
     )
 
 
+@router.get("/chat-with-image", response_class=HTMLResponse)
+async def chat_with_image(request: Request):
+    return request.app.state.templates.TemplateResponse(
+        "chat_with_image.html", {"request": request}
+    )
+
+
 def substitute_objects(input_string, objects):
     import re
 
