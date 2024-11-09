@@ -1,10 +1,16 @@
+import asyncio
+import json
 import math
 import os
 from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    StreamingResponse,
+)
 from pdf2image import convert_from_path
 
 from ..db import index_uploaded_files
@@ -53,53 +59,127 @@ def get_pdf_preview(pdf_path):
     return None
 
 
-@router.post("/upload")
-async def upload_files(files: List[UploadFile] = File(...)):
+async def send_progress(progress):
+    """Helper function to send progress with proper newline and flush"""
+    yield json.dumps(progress) + "\n"
+    await asyncio.sleep(0.1)  # Small delay to ensure progress is sent
+
+
+async def process_upload(files: List[Path]):
     uploads_dir = Path("uploads")
     uploads_dir.mkdir(exist_ok=True)
 
     uploaded_files = []
     uploaded_pages = []
-    for file in files:
-        try:
-            if not file.filename:
-                raise HTTPException(status_code=400, detail="Filename is required")
 
-            file_path = uploads_dir / file.filename
-            content = await file.read()
-            with open(file_path, "wb") as f:
-                f.write(content)
+    try:
+        # Then process each saved file
+        for file_path in files:
+            try:
+                # Convert PDF progress
+                async for chunk in send_progress(
+                    {
+                        "stage": "converting",
+                        "file": file_path.name,
+                        "progress": 0,
+                        "message": f"Converting {file_path.name}...",
+                    }
+                ):
+                    yield chunk
 
-            pages = convert_from_path(file_path, 300)
-            for i, page in enumerate(pages):
-                preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
-                Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
-                page.save(preview_path, "JPEG")
-                uploaded_pages.append(preview_path)
+                pages = convert_from_path(str(file_path), 150)
+                total_pages = len(pages)
 
-            file_data = {
-                "name": file.filename,
-                "type": get_file_type(file.filename),
-                "size": os.path.getsize(file_path) / 1024,  # size in KB
-                "path": str(file_path),
+                for i, page in enumerate(pages):
+                    preview_path = f"previews/{file_path.stem}/{i}.jpg"
+                    Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
+                    page.save(preview_path, "JPEG")
+                    uploaded_pages.append(preview_path)
+
+                    # Update conversion progress
+                    async for chunk in send_progress(
+                        {
+                            "stage": "converting",
+                            "file": file_path.name,
+                            "progress": (i + 1) / total_pages * 100,
+                            "message": f"Converting page {i + 1} of {total_pages} for {file_path.name}...",
+                        }
+                    ):
+                        yield chunk
+
+                file_data = {
+                    "name": file_path.name,
+                    "type": get_file_type(file_path.name),
+                    "size": os.path.getsize(file_path) / 1024,  # size in KB
+                    "path": str(file_path),
+                }
+
+                # Generate preview for PDFs
+                if file_path.suffix.lower() == ".pdf":
+                    preview_url = get_pdf_preview(str(file_path))
+                    if preview_url:
+                        file_data["preview_url"] = preview_url
+
+                uploaded_files.append(file_data)
+
+            except Exception as e:
+                async for chunk in send_progress(
+                    {"error": f"Failed to process {file_path.name}: {str(e)}"}
+                ):
+                    yield chunk
+                return
+
+        if uploaded_pages:
+            # Indexing progress
+            async for chunk in send_progress(
+                {
+                    "stage": "indexing",
+                    "progress": 50,
+                    "message": "Indexing uploaded files...",
+                }
+            ):
+                yield chunk
+
+            # Index the files
+            index_uploaded_files(uploaded_pages)
+
+        # Complete
+        async for chunk in send_progress(
+            {
+                "stage": "complete",
+                "progress": 100,
+                "message": "Upload complete",
+                "files": uploaded_files,
             }
+        ):
+            yield chunk
 
-            # Generate preview for PDFs
-            if file_path.suffix.lower() == ".pdf":
-                preview_url = get_pdf_preview(file_path)
-                if preview_url:
-                    file_data["preview_url"] = preview_url
+    except Exception as e:
+        async for chunk in send_progress({"error": f"Upload failed: {str(e)}"}):
+            yield chunk
 
-            uploaded_files.append(file_data)
 
-        except Exception as e:
-            return JSONResponse(
-                status_code=500,
-                content={"error": f"Failed to upload {file.filename}: {str(e)}"},
-            )
-    index_uploaded_files(uploaded_pages)
+@router.post("/upload")
+async def upload_files(files: List[UploadFile] = File(...)):
+    uploads_dir = Path("uploads")
+    uploads_dir.mkdir(exist_ok=True)
 
-    return JSONResponse(content={"files": uploaded_files})
+    saved_files = []
+
+    for file in files:
+        if not file.filename:
+            return "Failed"
+
+        file_path = uploads_dir / file.filename
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        saved_files.append(file_path)
+
+    return StreamingResponse(
+        process_upload(saved_files),
+        media_type="text/event-stream",
+    )
 
 
 @router.get("/files", response_class=HTMLResponse)
