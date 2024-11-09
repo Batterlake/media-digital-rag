@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Digital Media Hub{% endblock %}
+{% block title %}Цифровой медиацентр{% endblock %}
 
 {% block content %}
 <div class="search-container">
@@ -9,7 +9,7 @@
     </div>
 
     <div class="initial-search">
-        <h1>Digital Media Management</h1>
+        <h1>Интеллектуальный поиск по базе документов</h1>
         <!-- Search Bar in initial state -->
         <div class="search-bar-wrapper initial">
             <div class="search-bar-content">
@@ -27,7 +27,7 @@
                     </span>
                 </button>
                 <div class="search-input-group">
-                    <input type="text" class="search-box" placeholder="Search your media files...">
+                    <input type="text" class="search-box" placeholder="Поиск документов...">
                     <button class="search-button" id="searchButton">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -45,10 +45,10 @@
 <div class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Media Gallery</h3>
+            <h3>Галерея слайдов</h3>
             <a href="#" target="_blank" class="modal-caption" rel="noopener noreferrer"></a>
             <div class="modal-controls">
-                <button class="toggle-view" title="Toggle Heatmap">
+                <button class="toggle-view" title="Переключить тепловую карту">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
@@ -417,7 +417,7 @@
 
                         const viewAllBtn = document.createElement('button');
                         viewAllBtn.className = 'view-all-btn';
-                        viewAllBtn.textContent = 'View All';
+                        viewAllBtn.textContent = 'Смотреть все';
                         viewAllBtn.onclick = () => {
                             modalThumbnails.innerHTML = chunk.images.map((img, i) => `
                                 <div class="modal-thumbnail ${i === 0 ? 'active' : ''}" data-index="${i}">

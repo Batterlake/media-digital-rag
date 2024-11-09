@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Media Files{% endblock %}
+{% block title %}Медиафайлы{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -32,11 +32,11 @@
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    <span class="upload-text">Upload Files</span>
+                    <span class="upload-text">Загрузка файлов</span>
                 </div>
                 <div class="upload-loading">
                     <div class="upload-spinner"></div>
-                    <span>Processing...</span>
+                    <span>Обработка...</span>
                 </div>
             </label>
         </div>
@@ -46,7 +46,7 @@
         {% for file in files %}
         <div class="grid-item">
             <div class="media-item">
-                <a href="/pdf/{{ file.name }}" class="media-item-link">
+                <a href="/pdf/{{ file.name }}" target="_blank" rel="noopener noreferrer" class="media-item-link">
                     <div class="preview-container">
                         {% if file.preview_url %}
                         <img src="{{ file.preview_url }}" alt="PDF Preview">
@@ -95,7 +95,7 @@
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <p>No files found. Upload some files to get started.</p>
+            <p>Файлы не найдены. Загрузите несколько файлов, чтобы начать работу.</p>
         </div>
         {% endif %}
     </div>
@@ -103,18 +103,19 @@
     <div class="pagination">
         {% if has_prev %}
         <a href="/files?page={{ current_page - 1 }}{% if search %}&search={{ search }}{% endif %}" class="page-btn">&lt;
-            Previous</a>
+            Предыдущая</a>
         {% else %}
-        <button class="page-btn" disabled>&lt; Previous</button>
+        <button class="page-btn" disabled>&lt; Предыдущая</button>
         {% endif %}
 
-        <span class="page-info">Page {{ current_page }} of {{ total_pages }}</span>
+        <span class="page-info">Страница {{ current_page }} из {{ total_pages }}</span>
 
         {% if has_next %}
-        <a href="/files?page={{ current_page + 1 }}{% if search %}&search={{ search }}{% endif %}" class="page-btn">Next
+        <a href="/files?page={{ current_page + 1 }}{% if search %}&search={{ search }}{% endif %}"
+            class="page-btn">Следующая
             &gt;</a>
         {% else %}
-        <button class="page-btn" disabled>Next &gt;</button>
+        <button class="page-btn" disabled>Следующая &gt;</button>
         {% endif %}
     </div>
     {% endif %}

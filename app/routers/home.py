@@ -53,7 +53,8 @@ async def search_with_image(
         multivector_query = await run_in_threadpool(colpali_client.embed_texts, [query])
         multivector_query = multivector_query[0]
         yield (
-            json.dumps({"text": "Generating text embeddings...", "images": []}) + "\n"
+            json.dumps({"text": "Обработка текстовых представлений...", "images": []})
+            + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
@@ -63,7 +64,10 @@ async def search_with_image(
             )
             multivector_image = multivector_image[0]
             yield (
-                json.dumps({"text": "Generating image embeddings...", "images": []})
+                json.dumps({
+                    "text": "Обработка представлений изображений...",
+                    "images": [],
+                })
                 + "\n"
             ).encode("utf-8")
             await asyncio.sleep(0.5)
@@ -72,13 +76,11 @@ async def search_with_image(
         top_k = 5
         matches_query = vector_search(multivector_query, top_k)
         yield (
-            json.dumps(
-                {
-                    "text": f"Found top {top_k} pages for query...",
-                    "images": [],
-                    "links": [],
-                }
-            )
+            json.dumps({
+                "text": "Выполняется поиск по базе...",
+                "images": [],
+                "links": [],
+            })
             + "\n"
         ).encode("utf-8")
         await asyncio.sleep(0.5)
@@ -87,13 +89,11 @@ async def search_with_image(
         if image_path:
             matches_image = vector_search(multivector_image, top_k)
             yield (
-                json.dumps(
-                    {
-                        "text": f"Found top {top_k} pages for images...",
-                        "images": [],
-                        "links": [],
-                    }
-                )
+                json.dumps({
+                    "text": "Продолжается поиск по базе...",
+                    "images": [],
+                    "links": [],
+                })
                 + "\n"
             ).encode("utf-8")
 
@@ -102,14 +102,12 @@ async def search_with_image(
         )
         matches = unique_dicts(sorted_matches)
         matches = sorted_matches[:top_k]
-        masks = await asyncio.gather(
-            *[
-                run_in_threadpool(
-                    colpali_client.get_heatmap, query, m.get_preview_image_file()
-                )
-                for m in matches
-            ]
-        )
+        masks = await asyncio.gather(*[
+            run_in_threadpool(
+                colpali_client.get_heatmap, query, m.get_preview_image_file()
+            )
+            for m in matches
+        ])
         alpha = 0.5
         heatmaps = [np.repeat(mask * (1 - alpha), 3, -1) for mask in masks]
         hm_imgs = [
@@ -128,16 +126,14 @@ async def search_with_image(
 
         links_to_matches = [m.get_markdown_pdf_link() for m in matches]
         yield (
-            json.dumps(
-                {
-                    "text": "Analyzing...",
-                    "images": [m.get_preview_image_file() for m in (matches)],
-                    "heatmaps": [f"/heatmaps/{hm.name}" for hm in hm_links],
-                    "links": [
-                        [m.file_id.split("/")[-1], int(m.page_id) + 1] for m in matches
-                    ],
-                }
-            )
+            json.dumps({
+                "text": "Обработка данных...",
+                "images": [m.get_preview_image_file() for m in (matches)],
+                "heatmaps": [f"/heatmaps/{hm.name}" for hm in hm_links],
+                "links": [
+                    [m.file_id.split("/")[-1], int(m.page_id) + 1] for m in matches
+                ],
+            })
             + "\n"
         ).encode("utf-8")
         print([f"/heatmaps/{hm.name}" for hm in hm_links])
@@ -164,12 +160,10 @@ async def search_with_image(
     except Exception as exc:
         logging.error(exc)
         yield (
-            json.dumps(
-                {
-                    "text": "Не получилось обработать запрос",
-                    "images": [],
-                }
-            )
+            json.dumps({
+                "text": "Не получилось обработать запрос",
+                "images": [],
+            })
             + "\n"
         ).encode("utf-8")
 
