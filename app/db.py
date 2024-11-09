@@ -2,13 +2,13 @@ from pathlib import Path
 
 import numpy as np
 import stamina
-from PIL import Image
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-from retriever.client import ColpaliClient
 from tqdm import tqdm
 
 from app.config import QDRANT_COLLECTION_NAME, QDRANT_KEY, QDRANT_URL
+
+from .retriever.client import ColpaliClient
 
 
 def get_qdrant_client():
@@ -16,6 +16,7 @@ def get_qdrant_client():
         url=QDRANT_URL,
         api_key=QDRANT_KEY,
     )
+
 
 colpali_client = ColpaliClient("ml.n19", port=6339)
 
@@ -75,10 +76,10 @@ def index_uploaded_files(uploaded_files: list[Path], batch_size: int = 8):
             pbar.update(batch_size)
 
 
-def search(vlm_query, top_k: int = 10):
+def vector_search(multivector_query, top_k: int = 10):
     search_result = get_qdrant_client().query_points(
         collection_name=QDRANT_COLLECTION_NAME,
-        query=vlm_query,
+        query=multivector_query,
         limit=top_k,
         timeout=100,
         search_params=models.SearchParams(

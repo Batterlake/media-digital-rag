@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
+from ..db import colpali_client, vector_search
 from ..llm import request_with_image
 
 router = APIRouter()
@@ -52,7 +53,19 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
 @router.get("/api/search")
 async def search(q: str):
     """Search endpoint that returns streaming results."""
+
     # query -> embedder
+    multivector_query = colpali_client.embed_texts([q])[0]
     # embedding -> database
+    matches = vector_search(multivector_query, 10)
+    match = matches[0]
     # top-1 documents -> llm
-    return StreamingResponse(search_stream(q), media_type="application/x-ndjson")
+    return JSONResponse(
+        {
+            "text": request_with_image(
+                q, Path(f"{match['file_id']}/{match['page_id']}.jpg")
+            ),
+            "images": [f"{m['file_id']}/{m['page_id']}.jpg" for m in matches],
+        }
+    )
+    # return StreamingResponse(search_stream(q), media_type="application/x-ndjson")
