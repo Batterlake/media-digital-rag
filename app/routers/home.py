@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse
 
-from ..db import colpali_client, vector_search
+from ..db import VectorSearchResult, colpali_client, vector_search
 from ..llm import request_with_images
 
 router = APIRouter()
@@ -31,11 +31,11 @@ def substitute_objects(input_string, objects):
     return re.sub(r"@(\d+)@", replace_pattern, input_string)
 
 
-def unique_dicts(dicts, key1, key2):
+def unique_dicts(dicts: list[VectorSearchResult]):
     seen = set()
     unique_list = []
     for d in dicts:
-        identifier = (d[key1], d[key2])
+        identifier = (d.file_id, d.page_id)
         if identifier not in seen:
             seen.add(identifier)
             unique_list.append(d)
@@ -64,16 +64,17 @@ async def search_with_image(
         # embedding -> database
         top_k = 5
         matches_query = vector_search(multivector_query, top_k)
-        await asyncio.sleep(0.5)
         yield (
             json.dumps(
                 {
                     "text": f"Found top {top_k} pages for query...",
                     "images": [],
+                    "links": [],
                 }
             )
             + "\n"
         ).encode("utf-8")
+        await asyncio.sleep(0.5)
 
         matches_image = []
         if image_path:
@@ -81,8 +82,9 @@ async def search_with_image(
             yield (
                 json.dumps(
                     {
-                        "text": f"Found top {top_k} pages for query...",
+                        "text": f"Found top {top_k} pages for images...",
                         "images": [],
+                        "links": [],
                     }
                 )
                 + "\n"
@@ -91,13 +93,13 @@ async def search_with_image(
         sorted_matches = sorted(
             (matches_query + matches_image), key=lambda x: x.score, reverse=True
         )
-        matches = unique_dicts(sorted_matches, "file_id", "page_id")
+        matches = unique_dicts(sorted_matches)
         matches = sorted_matches[:top_k]
         links_to_matches = [m.get_markdown_pdf_link() for m in matches]
         yield (
             json.dumps(
                 {
-                    "text": f"Found top {top_k} pages for image ...",
+                    "text": "Analyzing...",
                     "images": [m.get_preview_image_file() for m in matches],
                     "links": [[m.file_id, int(m.page_id) + 1] for m in matches],
                 }
