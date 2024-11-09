@@ -1,4 +1,18 @@
 services:
+  web:
+    image: mediawise-web-server
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 6340:8000
+    expose:
+      - 8000
+    volumes:
+      - ./:/app/
+
+
   qdrant:
     image: qdrant/qdrant:latest
     restart: always
@@ -19,7 +33,7 @@ services:
     image: qwenllm/qwenvl:2-cu121
     restart: always
     shm_size: '50gb'
-    entrypoint: "python -m vllm.entrypoints.openai.api_server --served-model-name Qwen2-VL-7B-Instruct-GPTQ-Int4 --model Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4 --gpu-memory-utilization .5 --max_model_len 14336  --limit-mm-per-prompt image=10 --enforce-eager"
+    entrypoint: "python -m vllm.entrypoints.openai.api_server --served-model-name Qwen2-VL-72B-Instruct-GPTQ-Int4 --model Qwen/Qwen2-VL-72B-Instruct-GPTQ-Int4 --gpu-memory-utilization 0.75 --max_model_len 14336  --limit-mm-per-prompt image=10 --enforce-eager"
     ports:
       - 6336:8000
     expose:

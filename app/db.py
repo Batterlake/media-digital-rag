@@ -18,7 +18,7 @@ def get_qdrant_client():
     )
 
 
-colpali_client = ColpaliClient("ml.n19", port=6339)
+colpali_client = ColpaliClient("colpali", port=8000)
 
 
 def get_payload_id_from_filename(filename: str):
