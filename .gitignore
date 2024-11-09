@@ -4,9 +4,11 @@ vllm.env
 data/*
 !data/.gitkeep
 qdrant_data/
+temp_masks/
+previews/
 
 .conda*
-*.jpg
+# *.jpg
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
