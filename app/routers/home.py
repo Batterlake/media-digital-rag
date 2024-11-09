@@ -42,71 +42,8 @@ def unique_dicts(dicts, key1, key2):
     return unique_list
 
 
-async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
-    """Generate streaming search results with text and images."""
-    try:
-        multivector_query = colpali_client.embed_texts([query])[0]
-        yield (
-            json.dumps({"text": "Generating text embeddings...", "images": []}) + "\n"
-        ).encode("utf-8")
-        await asyncio.sleep(0.5)
-
-        # embedding -> database
-        top_k = 5
-        matches = vector_search(multivector_query, top_k)
-        matches = unique_dicts(matches, "file_id", "page_id")
-        links_to_matches = [
-            f"[{m['file_id'].split('/')[-1]}.pdf](/pdf/{m['file_id'].split('/')[-1]}.pdf#page={int(m['page_id']) + 1})"
-            for m in matches
-        ]
-        yield (
-            json.dumps(
-                {
-                    "text": f"Found top {top_k} pages...",
-                    "images": [f"{m['file_id']}/{m['page_id']}.jpg" for m in matches],
-                    "links": [
-                        [m["file_id"].split("/")[-1], int(m["page_id"]) + 1]
-                        for m in matches
-                    ],
-                }
-            )
-            + "\n"
-        ).encode("utf-8")
-        await asyncio.sleep(0.5)
-
-        llm_response = await run_in_threadpool(
-            request_with_images,
-            query,
-            [Path(f"{match['file_id']}/{match['page_id']}.jpg") for match in matches],
-        )
-        yield (
-            json.dumps(
-                {
-                    "text": substitute_objects(
-                        llm_response,
-                        links_to_matches,
-                    ),
-                    "images": [],
-                },
-                ensure_ascii=False,
-            )
-            + "\n"
-        ).encode("utf-8")
-    except Exception as exc:
-        logging.error(exc)
-        yield (
-            json.dumps(
-                {
-                    "text": "Не получилось обработать запрос",
-                    "images": [],
-                }
-            )
-            + "\n"
-        ).encode("utf-8")
-
-
 async def search_with_image(
-    query: str, image_path: Path
+    query: str, image_path: Path | None = None
 ) -> AsyncGenerator[bytes, None]:
     """Generate streaming search results with text and images."""
     try:
@@ -116,15 +53,18 @@ async def search_with_image(
         ).encode("utf-8")
         await asyncio.sleep(0.5)
 
-        multivector_image = colpali_client.embed_images([str(image_path)])[0]
-        yield (
-            json.dumps({"text": "Generating image embeddings...", "images": []}) + "\n"
-        ).encode("utf-8")
-        await asyncio.sleep(0.5)
+        if image_path:
+            multivector_image = colpali_client.embed_images([str(image_path)])[0]
+            yield (
+                json.dumps({"text": "Generating image embeddings...", "images": []})
+                + "\n"
+            ).encode("utf-8")
+            await asyncio.sleep(0.5)
 
         # embedding -> database
         top_k = 5
         matches_query = vector_search(multivector_query, top_k)
+        await asyncio.sleep(0.5)
         yield (
             json.dumps(
                 {
@@ -134,37 +74,43 @@ async def search_with_image(
             )
             + "\n"
         ).encode("utf-8")
-        await asyncio.sleep(0.5)
 
-        # top-k documents -> llm
-        matches_image = vector_search(multivector_image, 5)
+        matches_image = []
+        if image_path:
+            matches_image = vector_search(multivector_image, top_k)
+            yield (
+                json.dumps(
+                    {
+                        "text": f"Found top {top_k} pages for query...",
+                        "images": [],
+                    }
+                )
+                + "\n"
+            ).encode("utf-8")
+
         sorted_matches = sorted(
-            (matches_query + matches_image), key=lambda x: x["score"], reverse=True
+            (matches_query + matches_image), key=lambda x: x.score, reverse=True
         )
         matches = unique_dicts(sorted_matches, "file_id", "page_id")
         matches = sorted_matches[:top_k]
-        links_to_matches = [
-            f"[{m['file_id']}.pdf](/pdf/{m['file_id']}.pdf#page={int(m['page_id']) + 1})"
-            for m in matches
-        ]
+        links_to_matches = [m.get_markdown_pdf_link() for m in matches]
         yield (
             json.dumps(
                 {
                     "text": f"Found top {top_k} pages for image ...",
-                    "images": [
-                        f"{m['file_id']}/{m['page_id']}.jpg" for m in matches_image
-                    ]
-                    + [f"{m['file_id']}/{m['page_id']}.jpg" for m in matches_query],
-                    "links": [[m["file_id"], int(m["page_id"]) + 1] for m in matches],
+                    "images": [m.get_preview_image_file() for m in matches],
+                    "links": [[m.file_id, int(m.page_id) + 1] for m in matches],
                 }
             )
             + "\n"
         ).encode("utf-8")
+
+        # top-k documents -> llm
         await asyncio.sleep(0.5)
         llm_response = await run_in_threadpool(
             request_with_images,
             query,
-            [Path(f"{match['file_id']}/{match['page_id']}.jpg") for match in matches],
+            [Path(match.get_preview_image_file()) for match in matches],
         )
         yield (
             json.dumps(
@@ -206,11 +152,11 @@ async def search(q: str = Form(...), image: UploadFile = File(None)):
         return StreamingResponse(
             search_with_image(q, image_path), media_type="application/x-ndjson"
         )
-    return StreamingResponse(search_stream(q), media_type="application/x-ndjson")
+    return StreamingResponse(search_with_image(q), media_type="application/x-ndjson")
 
 
 # Keep the GET endpoint for backward compatibility
 @router.get("/api/search")
 async def search_get(q: str):
     """Search endpoint that returns streaming results (GET method)."""
-    return StreamingResponse(search_stream(q), media_type="application/x-ndjson")
+    return StreamingResponse(search_with_image(q), media_type="application/x-ndjson")
