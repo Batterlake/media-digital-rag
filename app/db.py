@@ -3,10 +3,18 @@ from pathlib import Path
 import numpy as np
 import stamina
 from PIL import Image
+from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from tqdm import tqdm
 
-from app.main import COLLECTION_NAME, get_qdrant_client
+from app.config import QDRANT_COLLECTION_NAME, QDRANT_KEY, QDRANT_URL
+
+
+def get_qdrant_client():
+    return QdrantClient(
+        url=QDRANT_URL,
+        api_key=QDRANT_KEY,
+    )
 
 
 def get_payload_id_from_filename(filename: str):
@@ -22,7 +30,7 @@ def upsert_to_qdrant(points):
     qdrant_client = get_qdrant_client()
     try:
         qdrant_client.upsert(
-            collection_name=COLLECTION_NAME,
+            collection_name=QDRANT_COLLECTION_NAME,
             points=points,
             wait=False,
         )
@@ -72,3 +80,21 @@ def index_uploaded_files(uploaded_files: list[Path], batch_size: int = 8):
 
             # Update the progress bar
             pbar.update(batch_size)
+
+
+def search(vlm_query, top_k: int = 10):
+    search_result = get_qdrant_client().query_points(
+        collection_name=QDRANT_COLLECTION_NAME,
+        query=vlm_query,
+        limit=top_k,
+        timeout=100,
+        search_params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+                ignore=False,
+                rescore=True,
+                oversampling=2.0,
+            )
+        ),
+    )
+    payloads = [p.payload for p in search_result.points]
+    return payloads

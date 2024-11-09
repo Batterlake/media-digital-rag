@@ -1,9 +1,12 @@
 import asyncio
 import json
+from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
+
+from ..llm import request_with_image
 
 router = APIRouter()
 
@@ -22,10 +25,7 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
         {"text": "Searching through documents...\n", "images": []},
         {"text": f"Found some relevant information about '{query}':\n\n", "images": []},
         {
-            "text": "Here are some key findings from the documents:\n\n"
-            + "1. The search term appears in multiple contexts\n"
-            + "2. Several documents contain related information\n"
-            + "3. Found some relevant media files\n\n",
+            "text": request_with_image(query, Path("previews/5/0.jpg")),
             "images": [
                 "/previews/0/0.jpg",
                 "/previews/1/0.jpg",
@@ -48,7 +48,11 @@ async def search_stream(query: str) -> AsyncGenerator[bytes, None]:
         await asyncio.sleep(0.5)
 
 
+# post (q, image)
 @router.get("/api/search")
 async def search(q: str):
     """Search endpoint that returns streaming results."""
+    # query -> embedder
+    # embedding -> database
+    # top-1 documents -> llm
     return StreamingResponse(search_stream(q), media_type="application/x-ndjson")

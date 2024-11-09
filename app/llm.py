@@ -3,6 +3,8 @@ from pathlib import Path
 
 from openai import OpenAI
 
+from app.config import LLM_KEY, LLM_MODEL, LLM_URL
+
 
 def encode_base64(image_path: str | Path):
     with open(image_path, "rb") as f:
@@ -14,8 +16,8 @@ def request_with_image(
     query_text: str | None,
     image_path: Path | None,
     system_prompt="You are a helpful assistant.",
-    api_key="pee-pee-poo-poo",
-    api_url="http://ml.n19:6336/v1",
+    api_key=LLM_KEY,
+    api_url=LLM_URL,
 ):
     # Set OpenAI's API key and API base to use vLLM's API server.
     client = OpenAI(
@@ -29,20 +31,22 @@ def request_with_image(
             {
                 "type": "image_url",
                 "image_url": {
-                    "url": f'data:image;base64,{encode_base64(image_path=image_path).decode("utf-8")}'
+                    "url": f"data:image;base64,{encode_base64(image_path=image_path).decode('utf-8')}"
                 },
             }
         ]
 
     text_query = []
     if query_text is not None:
-        text_query = {
-            "type": "text",
-            "text": query_text,
-        }
+        text_query = [
+            {
+                "type": "text",
+                "text": query_text,
+            }
+        ]
     chat_response = client.chat.completions.create(
         # model="Qwen2-VL-72B-Instruct-GPTQ-Int4",
-        model="Qwen2-VL-7B-Instruct-GPTQ-Int4",
+        model=LLM_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": image_query + text_query},

@@ -98,6 +98,13 @@
     box-shadow: 0 8px 24px var(--glass-shadow);
 }
 
+.media-item-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
 .preview-container {
     aspect-ratio: 1;
     display: flex;
