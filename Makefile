@@ -19,8 +19,11 @@ download-dataset:
 	rm -r ./__MACOSX
 
 convert-pdfs:
-	cp -r data/train_data_mediawise/Media_Digital data/pdfs
-	find data/pdfs -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./data/jpeg/
+	cp data/train_data_mediawise/Media_Digital/* uploads/
+	find uploads/ -type f -name '*.pdf' | xargs -I{} -P 40 -- ./tools/convert-pdf.sh {} ./previews/
+
+populate-database:
+	docker compose exec web bash -c 'poetry install && poetry run python app/populate.py'
 
 deploy:
 	docker compose up -d
