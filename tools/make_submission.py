@@ -35,7 +35,6 @@ def parse_argse():
 
 
 def main(args):
-    submisson = pd.DataFrame(columns=("question", "answer", "filename", "slide_number"))
     questions = pd.read_excel(args.source)["question"]
     answers = []
     file_ids = []
