@@ -31,9 +31,10 @@ openai = "^1.54.3"
 pydantic = "^2.9.2"
 uvicorn = "^0.32.0"
 aiofiles = "^24.1.0"
-byaldi = "^0.0.5"
-qwen-vl-utils = "^0.0.8"
 transformers = "^4.46.2"
+qdrant-client = "^1.12.1"
+stamina = "^24.3.0"
+colpali-engine = "^0.3.4"
 
 [tool.poetry.group.docs]
 optional = true
