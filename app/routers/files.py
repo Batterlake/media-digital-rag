@@ -5,13 +5,13 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
+import pyvips
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
     StreamingResponse,
 )
-from pdf2image import convert_from_path
 
 from ..db import index_uploaded_files
 
@@ -31,7 +31,7 @@ def get_file_type(filename):
         return "file"
 
 
-def get_pdf_preview(pdf_path):
+def get_pdf_first_page(pdf_path):
     """Generate preview image for PDF first page"""
     # Create temp directory for preview images
     preview_dir = Path("previews/")
@@ -45,10 +45,10 @@ def get_pdf_preview(pdf_path):
     if not preview_path.exists():
         try:
             # Convert first page of PDF to image
-            pages = convert_from_path(pdf_path, first_page=1, last_page=1)
-            if pages:
+            page = pyvips.Image.new_from_file(str(pdf_path), dpi=100, page=0)
+            if page:
                 Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
-                pages[0].save(str(preview_path), "JPEG")
+                page.write_to_file(str(preview_path))
                 return f"/previews/{preview_name}"
         except Exception as e:
             print(f"Error generating preview for {pdf_path}: {e}")
@@ -87,13 +87,12 @@ async def process_upload(files: List[Path]):
                 ):
                     yield chunk
 
-                pages = convert_from_path(str(file_path), 150)
-                total_pages = len(pages)
-
-                for i, page in enumerate(pages):
+                total_pages = pyvips.Image.new_from_file(str(file_path)).get("n-pages")
+                for i in range(total_pages):
+                    page = pyvips.Image.new_from_file(str(file_path), dpi=100, page=i)
                     preview_path = f"previews/{file_path.stem}/{i}.jpg"
                     Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
-                    page.save(preview_path, "JPEG")
+                    page.write_to_file(preview_path)
                     uploaded_pages.append(preview_path)
 
                     # Update conversion progress
@@ -112,13 +111,8 @@ async def process_upload(files: List[Path]):
                     "type": get_file_type(file_path.name),
                     "size": os.path.getsize(file_path) / 1024,  # size in KB
                     "path": str(file_path),
+                    "preview_url": f"previews/{file_path.stem}/0.jpg",
                 }
-
-                # Generate preview for PDFs
-                if file_path.suffix.lower() == ".pdf":
-                    preview_url = get_pdf_preview(str(file_path))
-                    if preview_url:
-                        file_data["preview_url"] = preview_url
 
                 uploaded_files.append(file_data)
 
@@ -210,7 +204,7 @@ async def files(
 
                 # Generate preview URL for PDFs
                 if file_path.suffix.lower() == ".pdf":
-                    preview_url = get_pdf_preview(file_path)
+                    preview_url = get_pdf_first_page(file_path)
                     if preview_url:
                         file_data["preview_url"] = preview_url
 
