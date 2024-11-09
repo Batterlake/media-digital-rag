@@ -8,13 +8,13 @@ from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.config import QDRANT_COLLECTION_NAME
+from app.db import get_qdrant_client
 from app.routers import files, home
 
-COLLECTION_NAME = "test-collection"
 # Configure logging
 with open("log_conf.yaml") as file:
     config = yaml.safe_load(file)
@@ -23,17 +23,10 @@ with open("log_conf.yaml") as file:
 logger = logging.getLogger(__name__)
 
 
-def get_qdrant_client():
-    return QdrantClient(
-        url="http://ml.n19:6333",
-        api_key="",
-    )
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     qdrant_client = get_qdrant_client()
-    collection_name = COLLECTION_NAME
+    collection_name = QDRANT_COLLECTION_NAME
     if not qdrant_client.collection_exists(collection_name=collection_name):
         qdrant_client.create_collection(
             collection_name=collection_name,
@@ -63,6 +56,7 @@ app = FastAPI(
     middleware=[
         Middleware(SessionMiddleware, secret_key="blah-blah-blah"),
     ],
+    lifespan=lifespan,
 )
 
 # Configure CORS

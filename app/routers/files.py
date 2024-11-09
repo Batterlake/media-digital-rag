@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pdf2image import convert_from_path
+
+from ..db import index_uploaded_files
 
 router = APIRouter()
 
@@ -57,6 +59,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
     uploads_dir.mkdir(exist_ok=True)
 
     uploaded_files = []
+    uploaded_pages = []
     for file in files:
         try:
             if not file.filename:
@@ -72,6 +75,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 preview_path = f"previews/{Path(file_path).stem}/{i}.jpg"
                 Path(preview_path).parent.mkdir(parents=True, exist_ok=True)
                 page.save(preview_path, "JPEG")
+                uploaded_pages.append(preview_path)
 
             file_data = {
                 "name": file.filename,
@@ -93,6 +97,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 status_code=500,
                 content={"error": f"Failed to upload {file.filename}: {str(e)}"},
             )
+    index_uploaded_files(uploaded_pages)
 
     return JSONResponse(content={"files": uploaded_files})
 
@@ -154,4 +159,17 @@ async def files(
             "has_next": page < total_pages,
             "has_prev": page > 1,
         },
+    )
+
+
+@router.get("/pdf/{filename}")
+async def get_pdf(filename: str):
+    file_path = Path("uploads") / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",  # This makes the browser render the PDF instead of downloading it
     )
