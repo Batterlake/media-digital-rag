@@ -4,5 +4,4 @@ QDRANT_KEY = ""
 LLM_URL = "http://vllm:8000/v1"
 LLM_KEY = "pee-pee-poo-poo"
 LLM_MODEL = "Qwen2-VL-72B-Instruct-GPTQ-Int4"
-COLPALI_URL = "colpali"
-COLPALI_PORT = 8000
+COLPALI_URL = "http://colpali:8000"

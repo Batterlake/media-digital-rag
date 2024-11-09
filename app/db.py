@@ -6,7 +6,12 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from tqdm import tqdm
 
-from app.config import QDRANT_COLLECTION_NAME, QDRANT_KEY, QDRANT_URL
+from app.config import (
+    COLPALI_URL,
+    QDRANT_COLLECTION_NAME,
+    QDRANT_KEY,
+    QDRANT_URL,
+)
 
 from .retriever.client import ColpaliClient
 
@@ -18,7 +23,7 @@ def get_qdrant_client():
     )
 
 
-colpali_client = ColpaliClient("colpali", port=8000)
+colpali_client = ColpaliClient(COLPALI_URL)
 
 
 def get_payload_id_from_filename(filename: str):

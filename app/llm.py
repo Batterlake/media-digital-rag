@@ -6,16 +6,14 @@ from openai import OpenAI
 from app.config import LLM_KEY, LLM_MODEL, LLM_URL
 
 SYSTEM_PROMPT = """
-You are a helpful assistant. ALWAYS answer in language the question was asked.
+You are a helpful assistant.
+
+### ALWAYS answer in language the question was asked. ###
 
 Given a user question and some images, \
 answer the user question and provide citations. \
 If none of the images answer the question, just say you don't know.
-
 """
-### Answer format ###
-# On image @{image_number}@ was mentioned ...
-# Also on image @{image_number}@ was mentioned ...
 
 
 def encode_base64(image_path: str | Path):

@@ -4,7 +4,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 from app.config import (
-    COLPALI_PORT,
     COLPALI_URL,
     QDRANT_COLLECTION_NAME,
     QDRANT_KEY,
@@ -20,8 +19,7 @@ if __name__ == "__main__":
     )
 
     colpali_client = ColpaliClient(
-        host=COLPALI_URL,
-        port=COLPALI_PORT,
+        COLPALI_URL,
     )
 
     collection_name = QDRANT_COLLECTION_NAME
