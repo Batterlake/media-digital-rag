@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import stamina
+from PIL import Image
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from tqdm import tqdm
@@ -99,5 +101,28 @@ def vector_search(multivector_query, top_k: int = 10):
             )
         ),
     )
-    payloads = [{**p.payload, "score": p.score} for p in search_result.points]
+    payloads = [
+        VectorSearchResult(
+            file_id=p.payload["file_id"],
+            page_id=p.payload["page_id"],
+            score=p.score,
+        )
+        for p in search_result.points
+    ]
     return payloads
+
+
+@dataclass
+class VectorSearchResult:
+    file_id: str
+    page_id: str
+    score: float
+
+    def get_markdown_pdf_link(self):
+        return f"[{self.file_id}.pdf](/pdf/{self.file_id}.pdf#page={int(self.page_id) + 1})"
+
+    def get_preview_image_file(self):
+        return f"{self.file_id}/{self.page_id}.jpg"
+
+    def get_image(self):
+        return np.array(Image.open(self.get_preview_image_file()))
