@@ -46,6 +46,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3>Media Gallery</h3>
+            <a href="#" target="_blank" class="modal-caption" rel="noopener noreferrer"></a>
             <div class="modal-controls">
                 <button class="modal-btn close-modal">&times;</button>
             </div>
@@ -86,6 +87,9 @@
     </div>
 </div>
 
+<!-- Add marked.js for markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const initialSearch = document.querySelector('.initial-search');
@@ -95,6 +99,7 @@
         const searchHistory = document.querySelector('.search-history');
         const modal = document.querySelector('.modal');
         const modalPreview = document.querySelector('.modal-preview img');
+        const modalCaption = document.querySelector('.modal-caption');
         const modalThumbnails = document.querySelector('.modal-thumbnails');
         const closeModal = document.querySelector('.close-modal');
         const prevBtn = document.querySelector('.prev-btn');
@@ -105,6 +110,7 @@
 
         let currentImageIndex = 0;
         let currentImages = [];
+        let currentLinks = [];
         let currentZoom = 1;
         let isFirstSearch = true;
         let activeSearchBox = searchBox;
@@ -113,6 +119,13 @@
         let activeFileInput = document.getElementById('imageInput');
         let activeAttachButton = document.getElementById('attachButton');
         let activeFileIcon = document.querySelector('.file-attached-icon');
+
+        // Configure marked.js options
+        marked.setOptions({
+            breaks: true,  // Enable line breaks
+            gfm: true,     // Enable GitHub Flavored Markdown
+            sanitize: true // Sanitize HTML input
+        });
 
         function setupAttachmentHandlers(fileInput, attachButton, fileIcon) {
             // Handle file input change
@@ -157,6 +170,16 @@
 
         function updateModalImage() {
             modalPreview.src = currentImages[currentImageIndex];
+            const link = currentLinks[currentImageIndex];
+            if (link) {
+                modalCaption.href = `/pdf/${link[0]}#page=${link[1]}`;
+                modalCaption.textContent = `Файл ${link[0]}, страница ${link[1]}`;
+                // modalCaption.parentElement.style.display = 'block';
+            } else {
+                modalCaption.href = '#';
+                modalCaption.textContent = '';
+                modalCaption.parentElement.style.display = 'none';
+            }
             const thumbnails = modalThumbnails.querySelectorAll('.modal-thumbnail');
             thumbnails.forEach((thumb, i) => {
                 thumb.classList.toggle('active', i === currentImageIndex);
@@ -201,6 +224,32 @@
             });
         }
 
+        function addMessageWithTransition(container, content) {
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message fade-in';
+            textDiv.innerHTML = marked.parse(content);
+
+            // If there's a previous message, replace its content with a transition
+            const previousMessage = container.querySelector('.message:last-child');
+            if (previousMessage) {
+                previousMessage.classList.add('fade-out');
+                setTimeout(() => {
+                    previousMessage.remove();
+                    container.appendChild(textDiv);
+                    // Trigger reflow to ensure transition plays
+                    textDiv.offsetHeight;
+                    textDiv.classList.add('visible');
+                }, 300); // Match the CSS transition duration
+            } else {
+                container.appendChild(textDiv);
+                // Trigger reflow to ensure transition plays
+                textDiv.offsetHeight;
+                textDiv.classList.add('visible');
+            }
+
+            return textDiv;
+        }
+
         zoomIn.addEventListener('click', () => handleZoom(0.2));
         zoomOut.addEventListener('click', () => handleZoom(-0.2));
 
@@ -232,16 +281,16 @@
             resultsContent.className = 'results-content';
 
             const streamText = document.createElement('div');
-            streamText.className = 'stream-text';
+            streamText.className = 'stream-text markdown-content';
 
             const loadingDots = createLoadingAnimation();
-            streamText.appendChild(loadingDots);
 
             const previewGrid = document.createElement('div');
             previewGrid.className = 'preview-grid';
 
             resultsContent.appendChild(streamText);
             resultsContent.appendChild(previewGrid);
+            resultsContent.appendChild(loadingDots);
             searchSection.appendChild(resultsContent);
 
             if (isFirstSearch) {
@@ -251,7 +300,6 @@
 
                 const searchBarClone = searchBarWrapper.cloneNode(true);
                 searchBarClone.classList.add('sticky');
-
                 // Update IDs to avoid duplicates
                 const newFileInput = searchBarClone.querySelector('input[type="file"]');
                 const newAttachButton = searchBarClone.querySelector('.attach-button');
@@ -315,21 +363,17 @@
                     const chunk = JSON.parse(decoder.decode(value));
 
                     if (isFirstChunk) {
-                        streamText.removeChild(loadingDots);
                         isFirstChunk = false;
                     }
 
                     if (chunk.text) {
-                        const textDiv = document.createElement('div');
-                        textDiv.className = 'message';
-                        textDiv.textContent = chunk.text;
-                        streamText.appendChild(textDiv);
-                        lastMessage = textDiv;
-                        scrollToContent(textDiv, 200);
+                        lastMessage = addMessageWithTransition(streamText, chunk.text);
+                        scrollToContent(lastMessage, 200);
                     }
 
                     if (chunk.images && chunk.images.length > 0) {
                         currentImages = chunk.images;
+                        currentLinks = chunk.links || Array(chunk.images.length).fill('');
                         const imageElements = chunk.images.slice(0, 4).map(img => `
                             <div class="preview-image">
                                 <img src="${img}" alt="Preview">
@@ -337,31 +381,32 @@
                         `).join('');
                         previewGrid.innerHTML = imageElements;
 
-                        if (chunk.images.length > 4) {
-                            const viewAllBtn = document.createElement('button');
-                            viewAllBtn.className = 'view-all-btn';
-                            viewAllBtn.textContent = 'View All';
-                            viewAllBtn.onclick = () => {
-                                modalThumbnails.innerHTML = chunk.images.map((img, i) => `
-                                    <div class="modal-thumbnail ${i === 0 ? 'active' : ''}" data-index="${i}">
-                                        <img src="${img}" alt="Thumbnail">
-                                    </div>
-                                `).join('');
+                        const viewAllBtn = document.createElement('button');
+                        viewAllBtn.className = 'view-all-btn';
+                        viewAllBtn.textContent = 'View All';
+                        viewAllBtn.onclick = () => {
+                            modalThumbnails.innerHTML = chunk.images.map((img, i) => `
+                                <div class="modal-thumbnail ${i === 0 ? 'active' : ''}" data-index="${i}">
+                                    <img src="${img}" alt="Thumbnail">
+                                </div>
+                            `).join('');
 
-                                modalThumbnails.querySelectorAll('.modal-thumbnail').forEach(thumb => {
-                                    thumb.addEventListener('click', () => {
-                                        currentImageIndex = parseInt(thumb.dataset.index);
-                                        updateModalImage();
-                                    });
+                            modalThumbnails.querySelectorAll('.modal-thumbnail').forEach(thumb => {
+                                thumb.addEventListener('click', () => {
+                                    currentImageIndex = parseInt(thumb.dataset.index);
+                                    updateModalImage();
                                 });
+                            });
 
-                                currentImageIndex = 0;
-                                modalPreview.src = chunk.images[0];
-                                modal.style.display = 'flex';
-                                setTimeout(() => modal.classList.add('visible'), 10);
-                            };
-                            previewGrid.appendChild(viewAllBtn);
-                        }
+                            currentImageIndex = 0;
+                            modalPreview.src = chunk.images[0];
+                            modalCaption.textContent = currentLinks[0] || '';
+                            modal.style.display = 'flex';
+                            updateModalImage()
+
+                            setTimeout(() => modal.classList.add('visible'), 10);
+                        };
+                        previewGrid.appendChild(viewAllBtn);
                     }
                 }
 
@@ -373,6 +418,7 @@
                 streamText.removeChild(loadingDots);
                 streamText.innerHTML += '<div class="message error">An error occurred during search.</div>';
             } finally {
+                resultsContent.removeChild(loadingDots);
                 isSearching = false;
                 resetAttachment();
                 activeSearchBox.value = '';
@@ -428,6 +474,100 @@
         border-radius: 50%;
         padding: 2px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Message transition styles */
+    .message {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .message.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .message.fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    /* Markdown content styles */
+    .markdown-content {
+        line-height: 1.6;
+    }
+
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4,
+    .markdown-content h5,
+    .markdown-content h6 {
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+    }
+
+    .markdown-content p {
+        margin: 1em 0;
+    }
+
+    .markdown-content ul,
+    .markdown-content ol {
+        margin: 1em 0;
+        padding-left: 2em;
+    }
+
+    .markdown-content code {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+
+    .markdown-content pre {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 1em;
+        border-radius: 5px;
+        overflow-x: auto;
+    }
+
+    .markdown-content blockquote {
+        border-left: 4px solid #ddd;
+        margin: 1em 0;
+        padding-left: 1em;
+        color: #666;
+    }
+
+    .markdown-content img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .markdown-content a {
+        color: #0366d6;
+        text-decoration: none;
+    }
+
+    .markdown-content a:hover {
+        text-decoration: underline;
+    }
+
+    .markdown-content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+    }
+
+    .markdown-content th,
+    .markdown-content td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .markdown-content th {
+        background-color: rgba(0, 0, 0, 0.05);
     }
 </style>
 {% endblock %}

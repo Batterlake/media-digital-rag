@@ -94,5 +94,5 @@ def vector_search(multivector_query, top_k: int = 10):
             )
         ),
     )
-    payloads = [p.payload for p in search_result.points]
+    payloads = [{**p.payload, "score": p.score} for p in search_result.points]
     return payloads
