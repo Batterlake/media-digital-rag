@@ -78,12 +78,14 @@ async def process_upload(files: List[Path]):
         for file_path in files:
             try:
                 # Convert PDF progress
-                async for chunk in send_progress({
-                    "stage": "converting",
-                    "file": file_path.name,
-                    "progress": 0,
-                    "message": f"Converting {file_path.name}...",
-                }):
+                async for chunk in send_progress(
+                    {
+                        "stage": "converting",
+                        "file": file_path.name,
+                        "progress": 0,
+                        "message": f"Converting {file_path.name}...",
+                    }
+                ):
                     yield chunk
 
                 total_pages = pyvips.Image.new_from_file(str(file_path)).get("n-pages")
@@ -95,12 +97,14 @@ async def process_upload(files: List[Path]):
                     uploaded_pages.append(preview_path)
 
                     # Update conversion progress
-                    async for chunk in send_progress({
-                        "stage": "преобразование",
-                        "file": file_path.name,
-                        "progress": (i + 1) / total_pages * 100,
-                        "message": f"Преобразование страницы {i + 1} из {total_pages} для {file_path.name}...",
-                    }):
+                    async for chunk in send_progress(
+                        {
+                            "stage": "преобразование",
+                            "file": file_path.name,
+                            "progress": (i + 1) / total_pages * 100,
+                            "message": f"Преобразование страницы {i + 1} из {total_pages} для {file_path.name}...",
+                        }
+                    ):
                         yield chunk
 
                 file_data = {
@@ -114,31 +118,35 @@ async def process_upload(files: List[Path]):
                 uploaded_files.append(file_data)
 
             except Exception as e:
-                async for chunk in send_progress({
-                    "error": f"Не удалось обработать {file_path.name}: {str(e)}"
-                }):
+                async for chunk in send_progress(
+                    {"error": f"Не удалось обработать {file_path.name}: {str(e)}"}
+                ):
                     yield chunk
                 return
 
         if uploaded_pages:
             # Indexing progress
-            async for chunk in send_progress({
-                "stage": "индексирование",
-                "progress": 50,
-                "message": "Индексирование загруженных файлов...",
-            }):
+            async for chunk in send_progress(
+                {
+                    "stage": "индексирование",
+                    "progress": 50,
+                    "message": "Индексирование загруженных файлов...",
+                }
+            ):
                 yield chunk
 
             # Index the files
             index_uploaded_files(uploaded_pages)
 
         # Complete
-        async for chunk in send_progress({
-            "stage": "Готово",
-            "progress": 100,
-            "message": "Загрузка завершена",
-            "files": uploaded_files,
-        }):
+        async for chunk in send_progress(
+            {
+                "stage": "Готово",
+                "progress": 100,
+                "message": "Загрузка завершена",
+                "files": uploaded_files,
+            }
+        ):
             yield chunk
 
     except Exception as e:
