@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     Path("uploads/").mkdir(exist_ok=True)
     Path("logs/").mkdir(exist_ok=True)
     Path("temp_uploads/").mkdir(exist_ok=True)
+    Path("temp_masks/").mkdir(exist_ok=True)
 
     qdrant_client = get_qdrant_client()
     collection_name = QDRANT_COLLECTION_NAME
@@ -74,15 +75,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Path("previews/").mkdir(exist_ok=True)
-Path("uploads/").mkdir(exist_ok=True)
-Path("logs/").mkdir(exist_ok=True)
-Path("temp_uploads/").mkdir(exist_ok=True)
-
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads/"), name="uploads")
 app.mount("/previews", StaticFiles(directory="previews/"), name="previews")
+app.mount("/heatmaps", StaticFiles(directory="temp_masks/"), name="heatmaps")
 
 # Configure templates
 templates = Jinja2Templates(directory="app/templates")

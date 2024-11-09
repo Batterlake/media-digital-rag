@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import stamina
+from PIL import Image
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from tqdm import tqdm
@@ -122,3 +123,6 @@ class VectorSearchResult:
 
     def get_preview_image_file(self):
         return f"{self.file_id}/{self.page_id}.jpg"
+
+    def get_image(self):
+        return np.array(Image.open(self.get_preview_image_file()))

@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import requests
 from PIL import Image
@@ -50,6 +52,7 @@ class ColpaliClient:
             image_size = Image.open(image).size
             data = np.frombuffer(response.content, dtype=np.float64)
             heatmap = data.reshape(*image_size[::-1], 1)
-        except Exception:
+        except Exception as exc:
+            logging.error(exc)
             heatmap = None
         return heatmap

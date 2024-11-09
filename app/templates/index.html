@@ -48,6 +48,11 @@
             <h3>Media Gallery</h3>
             <a href="#" target="_blank" class="modal-caption" rel="noopener noreferrer"></a>
             <div class="modal-controls">
+                <button class="toggle-view" title="Toggle Heatmap">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
                 <button class="modal-btn close-modal">&times;</button>
             </div>
         </div>
@@ -106,10 +111,12 @@
         const nextBtn = document.querySelector('.next-btn');
         const zoomIn = document.querySelector('.zoom-in');
         const zoomOut = document.querySelector('.zoom-out');
+        const toggleView = document.querySelector('.toggle-view');
         const searchBarWrapper = document.querySelector('.search-bar-wrapper');
 
         let currentImageIndex = 0;
         let currentImages = [];
+        let currentHeatmaps = [];
         let currentLinks = [];
         let currentZoom = 1;
         let isFirstSearch = true;
@@ -119,6 +126,7 @@
         let activeFileInput = document.getElementById('imageInput');
         let activeAttachButton = document.getElementById('attachButton');
         let activeFileIcon = document.querySelector('.file-attached-icon');
+        let isHeatmapView = false;
 
         // Configure marked.js options
         marked.setOptions({
@@ -169,12 +177,14 @@
         }
 
         function updateModalImage() {
-            modalPreview.src = currentImages[currentImageIndex];
+            const imageUrl = isHeatmapView && currentHeatmaps[currentImageIndex]
+                ? currentHeatmaps[currentImageIndex]
+                : currentImages[currentImageIndex];
+            modalPreview.src = imageUrl;
             const link = currentLinks[currentImageIndex];
             if (link) {
                 modalCaption.href = `/pdf/${link[0]}.pdf#page=${link[1]}`;
                 modalCaption.textContent = `Файл ${link[0]}, страница ${link[1]}`;
-                // modalCaption.parentElement.style.display = 'block';
             } else {
                 modalCaption.href = '#';
                 modalCaption.textContent = '';
@@ -186,7 +196,19 @@
             });
             currentZoom = 1;
             modalPreview.style.transform = `scale(${currentZoom})`;
+
+            // Update toggle button state
+            toggleView.classList.toggle('active', isHeatmapView);
+            toggleView.style.opacity = currentHeatmaps[currentImageIndex] ? '1' : '0.3';
+            toggleView.disabled = !currentHeatmaps[currentImageIndex];
         }
+
+        toggleView.addEventListener('click', () => {
+            if (currentHeatmaps[currentImageIndex]) {
+                isHeatmapView = !isHeatmapView;
+                updateModalImage();
+            }
+        });
 
         function handleZoom(delta) {
             currentZoom = Math.max(1, Math.min(3, currentZoom + delta));
@@ -248,6 +270,17 @@
             }
 
             return textDiv;
+        }
+
+        function cleanInvalidCharacters(str) {
+            return str
+                // Remove control characters
+                .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+                // Fix unterminated quotes
+                .replace(/([^\\])'([^']*$)/, "$1''")
+                .replace(/([^\\])"([^"]*$)/, '$1""')
+                // Remove invalid Unicode
+                .replace(/[\uFFFD\uFFFE\uFFFF]/g, '');
         }
 
         zoomIn.addEventListener('click', () => handleZoom(0.2));
@@ -373,6 +406,7 @@
 
                     if (chunk.images && chunk.images.length > 0) {
                         currentImages = chunk.images;
+                        currentHeatmaps = chunk.heatmaps || Array(chunk.images.length).fill(null);
                         currentLinks = chunk.links || Array(chunk.images.length).fill('');
                         const imageElements = chunk.images.slice(0, 4).map(img => `
                             <div class="preview-image">
@@ -399,10 +433,11 @@
                             });
 
                             currentImageIndex = 0;
+                            isHeatmapView = false;
                             modalPreview.src = chunk.images[0];
                             modalCaption.textContent = currentLinks[0] || '';
                             modal.style.display = 'flex';
-                            updateModalImage()
+                            updateModalImage();
 
                             setTimeout(() => modal.classList.add('visible'), 10);
                         };
@@ -568,6 +603,40 @@
 
     .markdown-content th {
         background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Modal Controls */
+    .modal-controls {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .toggle-view {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--text-color);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .toggle-view:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-view.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .toggle-view:disabled {
+        cursor: not-allowed;
     }
 </style>
 {% endblock %}

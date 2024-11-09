@@ -1,12 +1,15 @@
 import asyncio
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import AsyncGenerator
 
+import numpy as np
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse
+from PIL import Image
 
 from ..db import VectorSearchResult, colpali_client, vector_search
 from ..llm import request_with_images
@@ -99,18 +102,45 @@ async def search_with_image(
         )
         matches = unique_dicts(sorted_matches)
         matches = sorted_matches[:top_k]
+        masks = await asyncio.gather(
+            *[
+                run_in_threadpool(
+                    colpali_client.get_heatmap, query, m.get_preview_image_file()
+                )
+                for m in matches
+            ]
+        )
+        alpha = 0.5
+        heatmaps = [np.repeat(mask * (1 - alpha), 3, -1) for mask in masks]
+        hm_imgs = [
+            match.get_image() * alpha + heatmap
+            for match, heatmap in zip(matches, heatmaps)
+        ]
+        hm_links = []
+        base_hm_dir = Path("temp_masks/")
+        for arr in hm_imgs:
+            save_path = (
+                base_hm_dir / datetime.now().strftime("%Y%m%d_%H%M%S%f")
+            ).with_suffix(".jpg")
+            hm_links.append(save_path)
+            img = Image.fromarray(arr.astype(np.uint8))
+            img.save(save_path, "JPEG")
+
         links_to_matches = [m.get_markdown_pdf_link() for m in matches]
         yield (
             json.dumps(
                 {
                     "text": "Analyzing...",
-                    "images": [m.get_preview_image_file() for m in matches],
-                    "links": [[m.file_id, int(m.page_id) + 1] for m in matches],
+                    "images": [m.get_preview_image_file() for m in (matches)],
+                    "heatmaps": [f"/heatmaps/{hm.name}" for hm in hm_links],
+                    "links": [
+                        [m.file_id.split("/")[-1], int(m.page_id) + 1] for m in matches
+                    ],
                 }
             )
             + "\n"
         ).encode("utf-8")
-
+        print([f"/heatmaps/{hm.name}" for hm in hm_links])
         # top-k documents -> llm
         await asyncio.sleep(0.5)
         llm_response = await run_in_threadpool(
