@@ -22,7 +22,7 @@ def convert_cyrillic_to_pdf(input_file, output_pdf, font_path):
     c = canvas.Canvas(str(output_pdf), pagesize=letter)
 
     # Set font and size
-    c.setFont("CyrillicFont", 12)
+    c.setFont("CyrillicFont", 10)
 
     # Read the input file
     with open(input_file, encoding="utf-8") as file:
